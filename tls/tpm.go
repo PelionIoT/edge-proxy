@@ -28,6 +28,7 @@ import (
 	"io"
 	"math/big"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/armPelionEdge/fog-proxy/rpc"
@@ -92,7 +93,9 @@ func TpmCertificateBuilder(settings CertStrategyConfig) (*tls.Certificate, <-cha
 		return &tls.Certificate{}, renewals, err
 	}
 
-	client := newJSONRPCClient(settings[TpmJSONRPCSocket], settings[TpmJSONRPCPath])
+	wg := new(sync.WaitGroup)
+	client := newJSONRPCClient(settings[TpmJSONRPCSocket], settings[TpmJSONRPCPath], wg)
+	wg.Wait()
 
 	tlsCert, err := configureTLSCert(client, settings)
 	if err != nil {
@@ -175,8 +178,12 @@ func configureTLSCert(client *rpc.Client, settings CertStrategyConfig) (tls.Cert
 	return tlsCert, nil
 }
 
-func newJSONRPCClient(socket string, path string) *rpc.Client {
+func newJSONRPCClient(socket string, path string, wg *sync.WaitGroup) *rpc.Client {
+	wg.Add(1)
+
 	onConn := func(c *rpc.Client) error {
+		defer wg.Done()
+
 		var r string
 		if err := c.Call(ptRegisterMethod, ptRegisterArgs{Name: generateProtocolName()}, &r); err != nil || r != "ok" {
 			return err
