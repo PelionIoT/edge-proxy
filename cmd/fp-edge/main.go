@@ -29,9 +29,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/armPelionEdge/fog-proxy/cmd"
-	"github.com/armPelionEdge/fog-proxy/server"
-	fog_tls "github.com/armPelionEdge/fog-proxy/tls"
+	"github.com/armPelionEdge/fog-proxy-edge/cmd"
+	"github.com/armPelionEdge/fog-proxy-edge/server"
+	fog_tls "github.com/armPelionEdge/fog-proxy-edge/tls"
 	"github.com/armPelionEdge/remotedialer"
 	"github.com/gorilla/websocket"
 )
