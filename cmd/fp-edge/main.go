@@ -195,6 +195,7 @@ func forwardingAddresses(defaultForwardingURL *url.URL, addrMap map[string]strin
 			forwardingHost = host
 		}
 
+		fmt.Printf("Address map: %v. Current host: %s. Forwarding host: %s\n", addrMap, originalHost, forwardingHost)
 		return forwardingHost
 	}
 }
