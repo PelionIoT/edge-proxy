@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/armPelionEdge/fog-proxy/rpc"
+	. "github.com/armPelionEdge/edge-proxy/rpc"
 )
 
 type ptRegisterArgs struct {

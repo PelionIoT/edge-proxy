@@ -29,9 +29,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/armPelionEdge/fog-proxy/cmd"
-	"github.com/armPelionEdge/fog-proxy/server"
-	fog_tls "github.com/armPelionEdge/fog-proxy/tls"
+	"github.com/armPelionEdge/edge-proxy/cmd"
+	"github.com/armPelionEdge/edge-proxy/server"
+	fog_tls "github.com/armPelionEdge/edge-proxy/tls"
 	"github.com/armPelionEdge/remotedialer"
 	"github.com/gorilla/websocket"
 )
@@ -115,7 +115,7 @@ func main() {
 
 	go func() {
 		for {
-			fmt.Printf("Establishing fog-proxy tunnel (tunnelURI=%s)\n", tunnelURI)
+			fmt.Printf("Establishing edge-proxy tunnel (tunnelURI=%s)\n", tunnelURI)
 
 			remotedialer.ClientConnect(tunnelURI, http.Header{}, &websocket.Dialer{
 				NetDial: func(network, address string) (net.Conn, error) {
@@ -123,12 +123,12 @@ func main() {
 					return netDialer.Dial("tcp", proxyAddr)
 				},
 			}, func(string, string) bool { return true }, func(ctx context.Context) error {
-				fmt.Printf("fog-proxy tunnel established\n")
+				fmt.Printf("edge-proxy tunnel established\n")
 
 				return nil
 			})
 
-			fmt.Printf("fog-proxy tunnel exited. Attempting to reestablish tunnel in %d seconds...\n", TunnelBackoffSeconds)
+			fmt.Printf("edge-proxy tunnel exited. Attempting to reestablish tunnel in %d seconds...\n", TunnelBackoffSeconds)
 
 			time.Sleep(time.Second * TunnelBackoffSeconds)
 		}
@@ -141,7 +141,7 @@ func main() {
 			go func() {
 				c := <-renewals
 				cert = c
-				fmt.Print("fog-proxy received a renewal cert. Proxy server should be re-launched with the new cert...\n")
+				fmt.Print("edge-proxy received a renewal cert. Proxy server should be re-launched with the new cert...\n")
 
 				cancelChildCtx()
 			}()
@@ -160,7 +160,7 @@ func main() {
 				fmt.Printf("Edge HTTP proxy server exited\n")
 			}
 
-			fmt.Printf("fog-proxy proxy server shut down. Attemtping to re-launch proxy server in %d seconds...\n", ServerBackoffSeconds)
+			fmt.Printf("edge-proxy proxy server shut down. Attemtping to re-launch proxy server in %d seconds...\n", ServerBackoffSeconds)
 
 			<-time.After(time.Second * ServerBackoffSeconds)
 		}

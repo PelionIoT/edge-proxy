@@ -31,7 +31,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/armPelionEdge/fog-proxy/rpc"
+	"github.com/armPelionEdge/edge-proxy/rpc"
 )
 
 // cert strategy options
