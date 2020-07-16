@@ -32,13 +32,13 @@ type SmartProxy struct {
 	wsHandler   http.Handler
 }
 
-func SmartHTTPProxy(forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate) *SmartProxy {
+func SmartHTTPProxy(forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(*http.Request) (*url.URL, error)) *SmartProxy {
 	proxyURL := &url.URL{
 		Scheme: "https",
 		Host:   forwardingAddress(""),
 	}
 	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
-	proxy.Transport = EdgeTransport(caList, clientCert)
+	proxy.Transport = EdgeTransport(caList, clientCert, proxyForEdge)
 	proxy.FlushInterval = -1
 	director := proxy.Director
 	proxy.Director = func(req *http.Request) {

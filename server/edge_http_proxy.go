@@ -30,8 +30,8 @@ import (
 	fog_http "github.com/armPelionEdge/edge-proxy/http"
 )
 
-func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate) {
-	handler := fog_http.EdgeHTTPProxy(forwardingAddress, caList, clientCert)
+func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(* http.Request) (*url.URL, error)) {
+	handler := fog_http.EdgeHTTPProxy(forwardingAddress, caList, clientCert, proxyForEdge)
 	listener, err := net.Listen("tcp", listenAddr)
 
 	if err != nil {
