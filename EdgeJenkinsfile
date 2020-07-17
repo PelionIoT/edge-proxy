@@ -1,0 +1,4 @@
+#!/usr/bin/env groovy
+@Library('edge-ci@edge-proxy-ci') _
+
+edge_proxy_ci()
