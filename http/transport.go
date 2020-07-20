@@ -19,6 +19,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -55,8 +56,9 @@ func splitAddr(host string) (string, string, int, error) {
 	return hostParts[0], hostParts[1], port, nil
 }
 
-func EdgeTransport(caList *x509.CertPool, clientCert *tls.Certificate) *http.Transport {
+func EdgeTransport(caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(*http.Request) (*url.URL, error)) *http.Transport {
 	t := &http.Transport{
+		Proxy: proxyForEdge,
 		TLSClientConfig: &tls.Config{
 			RootCAs: caList,
 			GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {

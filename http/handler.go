@@ -22,8 +22,8 @@ import (
 	"net/url"
 )
 
-func EdgeHTTPProxy(forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate) http.Handler {
-	proxy := SmartHTTPProxy(forwardingAddress, caList, clientCert)
+func EdgeHTTPProxy(forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(*http.Request) (*url.URL, error)) http.Handler {
+	proxy := SmartHTTPProxy(forwardingAddress, caList, clientCert, proxyForEdge)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		proxyURL := &url.URL{

@@ -42,6 +42,7 @@ const ServerBackoffSeconds = 10
 var tunnelURI string
 var proxyURI string
 var proxyAddr string
+var externalHTTPProxyURI string
 var ca string
 var certStrategy string
 var useL4Proxy bool
@@ -52,6 +53,7 @@ func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Tunnel address to connect to")
 	flag.StringVar(&proxyURI, "proxy-uri", "", "Root URI to which outgoing HTTP requests should be proxied")
 	flag.StringVar(&proxyAddr, "proxy-listen", "0.0.0.0:8080", "Listen address for HTTP proxy server")
+	flag.StringVar(&externalHTTPProxyURI, "extern-http-proxy-uri", "", "optional external Http proxy for site")
 	flag.BoolVar(&useL4Proxy, "use-l4-proxy", false, "Use a layer 4 proxy instead of a layer 7 proxy")
 	flag.StringVar(&ca, "ca", "", "Certificate authority for the cloud")
 	flag.StringVar(&certStrategy, "cert-strategy", fog_tls.DefaultDriver(), fmt.Sprintf("Certificate strategy must be one of: %v", fog_tls.Drivers()))
@@ -77,6 +79,15 @@ func main() {
 		fmt.Printf("tunnel-uri must be provided\n")
 
 		os.Exit(1)
+	}
+
+	if externalHTTPProxyURI != "" {
+		_, err := url.Parse(externalHTTPProxyURI)
+		if err != nil {
+			fmt.Printf("extern-http-proxy-uri invalid: %s\n", err.Error())
+
+			os.Exit(1)
+		}
 	}
 
 	var forwardingAddressesMapParsed map[string]string
@@ -155,7 +166,19 @@ func main() {
 			} else {
 				fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
 
-				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert)
+				proxyForEdge := func(req *http.Request) (*url.URL, error) {
+					var proxy *url.URL
+
+					proxy, err := url.Parse(externalHTTPProxyURI)
+					if err != nil {
+						return nil, nil
+					} else {
+						return proxy, nil
+					}
+				}
+
+
+				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert, proxyForEdge)
 
 				fmt.Printf("Edge HTTP proxy server exited\n")
 			}
