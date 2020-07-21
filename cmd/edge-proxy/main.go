@@ -167,16 +167,17 @@ func main() {
 				fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
 
 				proxyForEdge := func(req *http.Request) (*url.URL, error) {
-					var proxy *url.URL
 
-					proxy, err := url.Parse(externalHTTPProxyURI)
-					if err != nil {
-						return nil, nil
-					} else {
-						return proxy, nil
+					if externalHTTPProxyURI != "" {
+						var proxy *url.URL
+						proxy, err := url.Parse(externalHTTPProxyURI)
+						if err == nil {
+							return proxy, nil
+						}
 					}
-				}
 
+					return nil, nil
+				}
 
 				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert, proxyForEdge)
 
