@@ -124,6 +124,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Printf("Successfully configure TLS certificate - cert: %s\n", certificate)
+
 	go func() {
 		for {
 			fmt.Printf("Establishing edge-proxy tunnel (tunnelURI=%s)\n", tunnelURI)

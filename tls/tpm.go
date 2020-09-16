@@ -97,16 +97,22 @@ func TpmCertificateBuilder(settings CertStrategyConfig) (*tls.Certificate, <-cha
 	client := newJSONRPCClient(settings[TpmJSONRPCSocket], settings[TpmJSONRPCPath], wg)
 	wg.Wait()
 
+	fmt.Printf("TpmCertificateBuilder(): Initialized a JSON RPC client by dialing to socket %s/%s\n", settings[TpmJSONRPCSocket], settings[TpmJSONRPCPath])
+
 	tlsCert, err := configureTLSCert(client, settings)
 	if err != nil {
+		fmt.Printf("TpmCertificateBuilder(): Failed to configure TLS cert. Error: %s\n", err.Error())
+
 		return fail(err)
 	}
+
+	fmt.Printf("TpmCertificateBuilder(): Configured TLS cert successfully - cert %+v\n", tlsCert)
 
 	if duration, ok := settings[TpmCertRenewalQueryDuration]; ok {
 		i, err := strconv.Atoi(duration)
 
 		if err != nil {
-			fmt.Printf("Invalid certificate renewal query duration")
+			fmt.Printf("TpmCertificateBuilder(): Invalid certificate renewal query duration")
 		}
 
 		certRenewalWatcherDuration = i
@@ -115,21 +121,23 @@ func TpmCertificateBuilder(settings CertStrategyConfig) (*tls.Certificate, <-cha
 	go func() {
 		for {
 			<-time.After(time.Second * time.Duration(certRenewalWatcherDuration))
-			fmt.Printf("Monitoring the certificate renewal\n")
+			fmt.Printf("TpmCertificateBuilder(): Monitoring the certificate renewal\n")
 
 			newTLSCert, err := configureTLSCert(client, settings)
 			if err != nil {
-				fmt.Printf("Unable to configure the TLS certificate. Error: %s\n", err.Error())
+				fmt.Printf("TpmCertificateBuilder(): Unable to configure the TLS certificate. Error: %s\n", err.Error())
 
 				continue
 			}
+
+			fmt.Printf("TpmCertificateBuilder(): Received a cert - cert %+v\n", newTLSCert)
 
 			if newTLSCert.Leaf.SerialNumber.Cmp(tlsCert.Leaf.SerialNumber) != 0 {
 				tlsCert = newTLSCert
 
 				renewals <- &newTLSCert
 
-				fmt.Printf("Detected a new certificate and the proxy server would be re-launched within %d seconds...\n", certRenewalWatcherDuration)
+				fmt.Printf("TpmCertificateBuilder(): New cert is different from the old one. Proxy server would be re-launched within %d seconds...\n", certRenewalWatcherDuration)
 			}
 		}
 	}()
@@ -146,6 +154,8 @@ func configureTLSCert(client *rpc.Client, settings CertStrategyConfig) (tls.Cert
 
 	var cert certificate
 	if err := client.Call(getCertMethod, getCertArgs{Certificate: settings[TpmDeviceCertName]}, &cert); err != nil {
+		fmt.Printf("configureTLSCert(): Failed to send the call operation to JSON RPC client. Error: %s\n", err.Error())
+
 		return fail(err)
 	}
 
@@ -157,6 +167,8 @@ func configureTLSCert(client *rpc.Client, settings CertStrategyConfig) (tls.Cert
 	// parse the certificate as a X.509 certificate and pass into the leaf of tls certificate
 	leafCert, err := x509.ParseCertificate(certDERBlock.Bytes)
 	if err != nil {
+		fmt.Printf("configureTLSCert(): Failed to parse certificate. Error: %s\n", err.Error())
+
 		return fail(err)
 	}
 	tlsCert.Leaf = leafCert
@@ -164,6 +176,8 @@ func configureTLSCert(client *rpc.Client, settings CertStrategyConfig) (tls.Cert
 	// extract the public key of the x.509 cert
 	pk, ok := leafCert.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
+		fmt.Printf("configureTLSCert(): Failed to extract the public key from the cert\n")
+
 		return fail(errInvalidECPublicKey)
 	}
 
@@ -186,6 +200,8 @@ func newJSONRPCClient(socket string, path string, wg *sync.WaitGroup) *rpc.Clien
 
 		var r string
 		if err := c.Call(ptRegisterMethod, ptRegisterArgs{Name: generateProtocolName()}, &r); err != nil || r != "ok" {
+			fmt.Printf("newJSONRPCClient(): Failed to send the protocol register request or the result is not ok. Error: %s. Result: %s\n", err.Error(), r)
+
 			return err
 		}
 
@@ -217,17 +233,23 @@ func (pk *ecdsaPrivateKey) Sign(rand io.Reader, digest []byte, opts crypto.Signe
 	signArgs := cryptoSignArgs{PrivateKeyName: pk.privateKeyName, HashDigest: base64.StdEncoding.EncodeToString(digest)}
 
 	if err := pk.client.Call(cryptoSignMethod, signArgs, &sig); err != nil {
+		fmt.Printf("ecdsaPrivateKey.Sign(): Failed to send JSON RPC Call through the client. Error: %s\n", err.Error())
+
 		return nil, err
 	}
 
 	// signature data is a base64 encoded string of a RAW format ecdsa signature
 	raw, err := base64.StdEncoding.DecodeString(sig.Data)
 	if err != nil {
+		fmt.Printf("ecdsaPrivateKey.Sign(): Failed to decode signature data. Error: %s\n", err.Error())
+
 		return nil, err
 	}
 
 	// signature data should be encoded as DER-encoded ASN.1 format
 	if len(raw) != 64 {
+		fmt.Printf("ecdsaPrivateKey.Sign(): Found invalid ecdsa signature. Raw data length: %d. Error: %s\n", len(raw), errInvalidECSignature)
+
 		return nil, errInvalidECSignature
 	}
 

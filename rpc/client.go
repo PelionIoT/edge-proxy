@@ -138,6 +138,8 @@ func (c *Client) CallWithContext(ctx context.Context, method string, args interf
 		response: make(chan *json.RawMessage),
 	}
 
+	fmt.Printf("Client.CallWithContext(): call operation - id %s, method %s, args %s\n", id, method, args)
+
 	// add the request id to the delivery map for future response delivering
 	resp := c.deliveryMap.addRequestOp(id)
 
@@ -331,6 +333,8 @@ func (c *Client) consume(conn *websocket.Conn) {
 			continue
 		}
 
+		fmt.Printf("Client.consume(): consume message - id %s, message %s\n", id, *msg)
+
 		c.deliveryMap.deliver(id, msg)
 	}
 }
@@ -387,6 +391,8 @@ func decodeClientResponse(r io.Reader) (string, *json.RawMessage, error) {
 		return c.ID, c.Result, fmt.Errorf("Unexpected null result")
 	}
 
+	fmt.Printf("decodeClientResponse() - id %s, response %s", c.ID, *c.Result)
+
 	return c.ID, c.Result, nil
 }
 
@@ -418,6 +424,8 @@ func (m *deliveryMap) addRequestOp(id string) chan *json.RawMessage {
 	newRes := make(chan *json.RawMessage)
 	m.deliveryMap[id][newRes] = true
 
+	fmt.Printf("deliveryMap.addRequestOp(): add request op with id %s\n", id)
+
 	return newRes
 }
 
@@ -433,6 +441,8 @@ func (m *deliveryMap) removeRequestOp(id string, res chan *json.RawMessage) {
 	if len(m.deliveryMap[id]) == 0 {
 		delete(m.deliveryMap, id)
 	}
+
+	fmt.Printf("deliveryMap.removeRequestOp(): remove request op with id %s\n", id)
 }
 
 func (m *deliveryMap) deliver(id string, msg *json.RawMessage) {
@@ -442,6 +452,8 @@ func (m *deliveryMap) deliver(id string, msg *json.RawMessage) {
 	for chn := range m.deliveryMap[id] {
 		if m.deliveryMap[id][chn] == true {
 			chn <- msg
+
+			fmt.Printf("deliveryMap.deliver(): deliver message to id %s. Response - %s\n", id, *msg)
 		}
 	}
 }
