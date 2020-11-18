@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/armPelionEdge/edge-proxy/rpc"
+	. "github.com/PelionIoT/edge-proxy/rpc"
 )
 
 type ptRegisterArgs struct {
@@ -40,7 +40,7 @@ type signResponse struct {
 var _ = Describe("Client", func() {
 	// please make sure to start edge-core locally to make sure the websocket server is running
 	Specify("Make crypto asymmetric call to edge core", func() {
-		client := Dial("/tmp/edge.sock", "/1/pt")
+		client := Dial("/tmp/edge.sock", "/1/pt", func(*Client) error { return nil })
 		defer client.Close()
 
 		var res string

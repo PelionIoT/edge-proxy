@@ -13,6 +13,6 @@ limitations under the License.
 */
 
 FROM golang
-ADD . /go/src/github.com/armPelionEdge/edge-proxy
-RUN go install github.com/armPelionEdge/edge-proxy/cmd/fp-edge
-ENTRYPOINT [ "/go/bin/fp-edge" ]
+ADD . /go/src/github.com/PelionIoT/edge-proxy
+RUN go install github.com/PelionIoT/edge-proxy/cmd/edge-proxy
+ENTRYPOINT [ "/go/bin/edge-proxy" ]

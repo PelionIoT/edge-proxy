@@ -29,10 +29,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/armPelionEdge/edge-proxy/cmd"
-	"github.com/armPelionEdge/edge-proxy/server"
-	fog_tls "github.com/armPelionEdge/edge-proxy/tls"
-	"github.com/armPelionEdge/remotedialer"
+	"github.com/PelionIoT/edge-proxy/cmd"
+	"github.com/PelionIoT/edge-proxy/server"
+	fog_tls "github.com/PelionIoT/edge-proxy/tls"
+	"github.com/PelionIoT/remotedialer"
 	"github.com/gorilla/websocket"
 )
 

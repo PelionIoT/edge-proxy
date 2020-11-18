@@ -17,7 +17,7 @@ SECTION 1: THIRD PARTY SOFTWARE PROJECTS
 
 Name:         remotedialer v0.0.0-20190328213557-20ec38853712
 Summary:      Reverse Tunneling Dialer
-Home-page:    github.com/armPelionEdge/remotedialer
+Home-page:    github.com/PelionIoT/remotedialer
 License(s):   Apache License 2.0 (Apache-2.0). See later section for a copy of 
               license text.
 ----------------------------------------------------------------------  
