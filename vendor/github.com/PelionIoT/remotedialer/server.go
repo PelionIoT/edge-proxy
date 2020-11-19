@@ -17,6 +17,8 @@ var (
 
 type Authorizer func(req *http.Request) (clientKey string, authed bool, err error)
 type ErrorWriter func(rw http.ResponseWriter, req *http.Request, code int, err error)
+type OnConnect func(req *http.Request) error
+type OnDisconnect func(req *http.Request)
 
 func DefaultErrorWriter(rw http.ResponseWriter, req *http.Request, code int, err error) {
 	rw.Write([]byte(err.Error()))
@@ -24,13 +26,15 @@ func DefaultErrorWriter(rw http.ResponseWriter, req *http.Request, code int, err
 }
 
 type Server struct {
-	PeerID      string
-	PeerToken   string
-	authorizer  Authorizer
-	errorWriter ErrorWriter
-	sessions    *sessionManager
-	peers       map[string]peer
-	peerLock    sync.Mutex
+	PeerID       string
+	PeerToken    string
+	authorizer   Authorizer
+	errorWriter  ErrorWriter
+	onConnect    OnConnect
+	onDisconnect OnDisconnect
+	sessions     *sessionManager
+	peers        map[string]peer
+	peerLock     sync.Mutex
 }
 
 func New(auth Authorizer, errorWriter ErrorWriter) *Server {
@@ -40,6 +44,14 @@ func New(auth Authorizer, errorWriter ErrorWriter) *Server {
 		errorWriter: errorWriter,
 		sessions:    newSessionManager(),
 	}
+}
+
+func (s *Server) OnConnect(cb OnConnect) {
+	s.onConnect = cb
+}
+
+func (s *Server) OnDisconnect(cb OnDisconnect) {
+	s.onDisconnect = cb
 }
 
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -66,6 +78,22 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		s.errorWriter(rw, req, 400, errors.Wrapf(err, "Error during upgrade for host [%v]", clientKey))
 		return
 	}
+
+	// handle connect callback
+	if s.onConnect != nil {
+		err = s.onConnect(req)
+		if err != nil {
+			logrus.Infof("Error finish Connect qgitCallback function for request [%s]: %v", clientKey, err)
+			return
+		}
+	}
+
+	// handle disconnect callback
+	defer func() {
+		if s.onDisconnect != nil {
+			s.onDisconnect(req)
+		}
+	}()
 
 	session := s.sessions.add(clientKey, wsConn, peer)
 	defer s.sessions.remove(session)

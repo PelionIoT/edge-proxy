@@ -1,9 +1,9 @@
-module github.com/armPelionEdge/edge-proxy
+module github.com/PelionIoT/edge-proxy
 
 go 1.12
 
 require (
-	github.com/armPelionEdge/remotedialer v0.0.0-20190328213557-20ec38853712
+	github.com/PelionIoT/remotedialer v1.0.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/onsi/ginkgo v1.12.3
 	github.com/onsi/gomega v1.10.1

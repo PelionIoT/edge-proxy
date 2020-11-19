@@ -1,5 +1,5 @@
-github.com/armPelionEdge/remotedialer v0.0.0-20190328213557-20ec38853712 h1:iIDbpl/jA4bsyEaocJC0umRFIetq9ZcbA/8Q2GqhKM4=
-github.com/armPelionEdge/remotedialer v0.0.0-20190328213557-20ec38853712/go.mod h1:LgQLeMTfecw9ultflTQ24V+C+oWXUVDxNyF6EfTCTTU=
+github.com/PelionIoT/remotedialer v1.0.0 h1:uUEfj6aOw79mKzqyWhZwYN0qxUOjKurffsMCCJCEQcc=
+github.com/PelionIoT/remotedialer v1.0.0/go.mod h1:Xqgb3RYPf5vzwGarchdf7zqUhQ2UF4jKjD0VYpCbibo=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=

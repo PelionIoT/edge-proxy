@@ -31,7 +31,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/armPelionEdge/edge-proxy/rpc"
+	"github.com/PelionIoT/edge-proxy/rpc"
 )
 
 // cert strategy options
