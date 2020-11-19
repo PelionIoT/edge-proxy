@@ -27,7 +27,7 @@ import (
 
 	"golang.org/x/net/http2"
 
-	fog_http "github.com/armPelionEdge/edge-proxy/http"
+	fog_http "github.com/PelionIoT/edge-proxy/http"
 )
 
 func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(* http.Request) (*url.URL, error)) {
