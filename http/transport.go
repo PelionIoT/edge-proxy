@@ -22,8 +22,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/http2"
 )
 
 func splitAddr(host string) (string, string, int, error) {
@@ -65,12 +63,6 @@ func EdgeTransport(caList *x509.CertPool, clientCert *tls.Certificate, proxyForE
 				return clientCert, nil
 			},
 		},
-	}
-
-	err := http2.ConfigureTransport(t)
-
-	if err != nil {
-		fmt.Printf("Could not enable HTTP/2 on proxy transport: %s\n", err.Error())
 	}
 
 	return t
