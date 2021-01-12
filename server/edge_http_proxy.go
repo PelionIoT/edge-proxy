@@ -25,8 +25,6 @@ import (
 	"net/url"
 	"time"
 
-	"golang.org/x/net/http2"
-
 	fog_http "github.com/PelionIoT/edge-proxy/http"
 )
 
@@ -46,12 +44,6 @@ func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAd
 		Handler:      handler,
 		WriteTimeout: 45 * time.Second,
 		ReadTimeout:  300 * time.Second,
-	}
-
-	err = http2.ConfigureServer(httpServer, &http2.Server{})
-
-	if err != nil {
-		fmt.Printf("Could not enable HTTP/2 on proxy server: %s\n", err.Error())
 	}
 
 	go func() {
