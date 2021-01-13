@@ -45,6 +45,8 @@ var proxyAddr string
 var externalHTTPProxyURI string
 var ca string
 var certStrategy string
+var tlsDir string
+var useHTTPS bool
 var useL4Proxy bool
 var certStrategyOptions cmd.OptionMap = cmd.OptionMap{}
 var forwardingAddressesMap string
@@ -55,6 +57,8 @@ func main() {
 	flag.StringVar(&proxyAddr, "proxy-listen", "0.0.0.0:8080", "Listen address for HTTP proxy server")
 	flag.StringVar(&externalHTTPProxyURI, "extern-http-proxy-uri", "", "optional external Http proxy for site")
 	flag.BoolVar(&useL4Proxy, "use-l4-proxy", false, "Use a layer 4 proxy instead of a layer 7 proxy")
+	flag.BoolVar(&useHTTPS, "use-https", false, "Use https, requires tls-dir to be set")
+	flag.StringVar(&tlsDir, "tls-dir", "", "Directory containing tls.crt and tls.key for https connections")
 	flag.StringVar(&ca, "ca", "", "Certificate authority for the cloud")
 	flag.StringVar(&certStrategy, "cert-strategy", fog_tls.DefaultDriver(), fmt.Sprintf("Certificate strategy must be one of: %v", fog_tls.Drivers()))
 	flag.Var(&certStrategyOptions, "cert-strategy-options", "Can be specified one or more times. Must be a key-value pair (<key>=<value>)")
@@ -77,6 +81,12 @@ func main() {
 
 	if tunnelURI == "" {
 		fmt.Printf("tunnel-uri must be provided\n")
+
+		os.Exit(1)
+	}
+
+	if useHTTPS && tlsDir == "" {
+		fmt.Printf("tls-dir must be provided when using HTTPS\n")
 
 		os.Exit(1)
 	}
@@ -164,7 +174,11 @@ func main() {
 
 				fmt.Printf("Edge TLS proxy server exited\n")
 			} else {
-				fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
+				if useHTTPS {
+					fmt.Printf("Starting edge HTTPS proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
+				} else {
+					fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
+				}
 
 				proxyForEdge := func(req *http.Request) (*url.URL, error) {
 
@@ -179,7 +193,7 @@ func main() {
 					return nil, nil
 				}
 
-				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert, proxyForEdge)
+				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert, proxyForEdge, useHTTPS, tlsDir)
 
 				fmt.Printf("Edge HTTP proxy server exited\n")
 			}

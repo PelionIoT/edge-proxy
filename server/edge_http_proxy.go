@@ -30,7 +30,7 @@ import (
 	fog_http "github.com/PelionIoT/edge-proxy/http"
 )
 
-func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(* http.Request) (*url.URL, error)) {
+func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(*http.Request) (*url.URL, error), useHTTPS bool, tlsDir string) {
 	handler := fog_http.EdgeHTTPProxy(forwardingAddress, caList, clientCert, proxyForEdge)
 	listener, err := net.Listen("tcp", listenAddr)
 
@@ -62,7 +62,11 @@ func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAd
 		}
 	}()
 
-	err = httpServer.Serve(listener)
+	if useHTTPS {
+		err = httpServer.ServeTLS(listener, tlsDir+"/tls.crt", tlsDir+"/tls.key")
+	} else {
+		err = httpServer.Serve(listener)
+	}
 
 	fmt.Printf("HTTP edge proxy server shut down with error: %s\n", err.Error())
 }
