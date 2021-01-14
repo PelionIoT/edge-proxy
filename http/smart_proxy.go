@@ -57,6 +57,7 @@ func SmartHTTPProxy(forwardingAddress func(string) string, caList *x509.CertPool
 				return clientCert, nil
 			},
 		},
+		Proxy: proxyForEdge,
 	}
 
 	wsURL := *proxyURL
