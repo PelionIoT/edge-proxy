@@ -54,7 +54,7 @@ func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
 	flag.StringVar(&proxyURI, "proxy-uri", "", "Default server to which outgoing HTTP requests should be forwarded.  See forwarding-addresses option for overrides")
 	flag.StringVar(&proxyAddr, "proxy-listen", "0.0.0.0:8080", "Listen address for HTTP proxy server")
-	flag.StringVar(&externalHTTPProxyURI, "extern-http-proxy-uri", "", "optional external Http proxy for site")
+	flag.StringVar(&externalHTTPProxyURI, "extern-http-proxy-uri", "", "optional external Http proxy for site. For an authenticated proxy, specify the username and password in the URI, as in https://user:pwd@proxy-server:proxy-port")
 	flag.BoolVar(&useL4Proxy, "use-l4-proxy", false, "Use a layer 4 proxy instead of a layer 7 proxy")
 	flag.StringVar(&ca, "ca", "", "Certificate authority for the cloud")
 	flag.StringVar(&certStrategy, "cert-strategy", fog_tls.DefaultDriver(), fmt.Sprintf("Certificate strategy must be one of: %v", fog_tls.Drivers()))
