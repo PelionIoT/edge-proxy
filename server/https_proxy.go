@@ -68,7 +68,7 @@ func StartHTTPSProxy(addr string) {
 				handleHTTP(w, r)
 			}
 		}),
-		// Disable HTTP/2.  HTTP/2 doesn't support hijacking.
+		// Disable HTTP/2.  HTTP/2 doesn't support hijacking.  https://github.com/golang/go/issues/14797#issuecomment-196103814
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 	log.Fatal(server.ListenAndServe())
