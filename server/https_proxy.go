@@ -1,4 +1,4 @@
-package https
+package server
 
 import (
 	"crypto/tls"
@@ -10,8 +10,10 @@ import (
 )
 
 func handleTunneling(w http.ResponseWriter, r *http.Request) {
+	log.Printf("HTTP CONNECT: opening connection to %s\n", r.Host)
 	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
+		log.Printf("HTTP CONNECT: failed to open connection to %s\n", r.Host)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
@@ -30,7 +32,6 @@ func handleTunneling(w http.ResponseWriter, r *http.Request) {
 }
 
 func transfer(destination io.WriteCloser, source io.ReadCloser) {
-	defer destination.Close()
 	defer source.Close()
 	io.Copy(destination, source)
 }
@@ -56,9 +57,10 @@ func copyHeader(dst, src http.Header) {
 }
 
 // StartHTTPSProxy starts a proxy that accepts to the HTTP CONNECT method to proxy arbitrary HTTPS requests
-func StartHTTPSProxy() {
+func StartHTTPSProxy(addr string) {
+	log.Printf("Starting HTTPS proxy on %s\n", addr)
 	server := &http.Server{
-		Addr: ":8888",
+		Addr: addr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodConnect {
 				handleTunneling(w, r)
@@ -66,7 +68,7 @@ func StartHTTPSProxy() {
 				handleHTTP(w, r)
 			}
 		}),
-		// Disable HTTP/2.
+		// Disable HTTP/2.  HTTP/2 doesn't support hijacking.
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 	log.Fatal(server.ListenAndServe())
