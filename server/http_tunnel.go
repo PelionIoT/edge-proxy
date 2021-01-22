@@ -33,6 +33,7 @@ func handleTunneling(w http.ResponseWriter, r *http.Request) {
 
 func transfer(destination io.WriteCloser, source io.ReadCloser) {
 	defer source.Close()
+	// Copy until EOF, or Error
 	io.Copy(destination, source)
 }
 
@@ -56,8 +57,9 @@ func copyHeader(dst, src http.Header) {
 	}
 }
 
-// StartHTTPSProxy starts a proxy that accepts to the HTTP CONNECT method to proxy arbitrary HTTPS requests
-func StartHTTPSProxy(addr string) {
+// StartHTTPTunnel starts a server that accepts to the HTTP CONNECT method to proxy arbitrary TCP connections.
+// It can be used to tunnel HTTPS connections.
+func StartHTTPTunnel(addr string) {
 	log.Printf("Starting HTTPS proxy on %s\n", addr)
 	server := &http.Server{
 		Addr: addr,
