@@ -40,6 +40,7 @@ func transfer(destination io.WriteCloser, source io.ReadCloser) {
 func handleHTTP(w http.ResponseWriter, req *http.Request) {
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
+		log.Printf("HTTP proxy: failed to round trip to %s\n", req.URL)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
