@@ -48,6 +48,7 @@ var certStrategy string
 var useL4Proxy bool
 var certStrategyOptions cmd.OptionMap = cmd.OptionMap{}
 var forwardingAddressesMap string
+var httpTunnelAddr string
 
 func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
@@ -59,6 +60,7 @@ func main() {
 	flag.StringVar(&certStrategy, "cert-strategy", fog_tls.DefaultDriver(), fmt.Sprintf("Certificate strategy must be one of: %v", fog_tls.Drivers()))
 	flag.Var(&certStrategyOptions, "cert-strategy-options", "Can be specified one or more times. Must be a key-value pair (<key>=<value>)")
 	flag.StringVar(&forwardingAddressesMap, "forwarding-addresses", "{}", "Map of local address to forwarded address for outgoing HTTP requests. For each forwarding request received at proxy-listen, the destination URI in the request is rewritten based on this map, where the destination server is replaced with the value of the corresponding key.  If the destination server isn't found in this map, then the value of proxy-uri is used.  Must be a json string")
+	flag.StringVar(&httpTunnelAddr, "http-tunnel-listen", "localhost:8888", "Listen address for HTTP (CONNECT) tunnel server")
 	flag.Parse()
 
 	if proxyURI == "" {
@@ -190,7 +192,9 @@ func main() {
 		}
 	}(certificate)
 
+	server.StartHTTPTunnel(httpTunnelAddr)
 	<-ch
+
 }
 
 func loadCA(caFile string) (*x509.CertPool, error) {
