@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+/*
+ * The purpose of this feature is  to allow tunneling of arbitrary HTTP(S) connections.
+ * One use case for this is to allow tunneling of all Pelion edge traffic over an authenticated
+ * proxy, so that we can function behind restrictive firewalls that only allow HTTP(S)
+ * traffic to pass through them.  As opposed to adding tuneling code to each service, it
+ * would be easier to have edge-proxy handle tunneling configuration in one place.
+ */
+
 func handleTunneling(w http.ResponseWriter, r *http.Request) {
 	log.Printf("HTTP CONNECT: opening connection to %s\n", r.Host)
 	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
