@@ -2,7 +2,7 @@
 github.com/PelionIoT/remotedialer
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
-# github.com/gorilla/websocket v1.4.2
+# github.com/gorilla/websocket v1.4.2 => github.com/pelioniot/websocket v1.4.2-1
 github.com/gorilla/websocket
 # github.com/nxadm/tail v1.4.4
 github.com/nxadm/tail
@@ -51,7 +51,6 @@ github.com/sirupsen/logrus
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-golang.org/x/net/idna
 # golang.org/x/sys v0.0.0-20200519105757-fe76b779f299
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -73,10 +72,7 @@ golang.org/x/text/internal/tag
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
-golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
-golang.org/x/text/unicode/bidi
-golang.org/x/text/unicode/norm
 # golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
