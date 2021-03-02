@@ -49,6 +49,7 @@ var useL4Proxy bool
 var certStrategyOptions cmd.OptionMap = cmd.OptionMap{}
 var forwardingAddressesMap string
 var httpTunnelAddr string
+var proxyOnlyMode bool
 
 func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
@@ -63,16 +64,10 @@ func main() {
 	flag.StringVar(&httpTunnelAddr, "http-tunnel-listen", "localhost:8888", "Listen address for HTTP (CONNECT) tunnel server")
 	flag.Parse()
 
+	proxyOnlyMode = false
 	if proxyURI == "" {
-		fmt.Printf("proxy-uri must be provided\n")
-		os.Exit(1)
-	}
-
-	proxyURIParsed, err := url.Parse(proxyURI)
-
-	if err != nil {
-		fmt.Printf("proxy-uri invalid: %s\n", err.Error())
-		os.Exit(1)
+		fmt.Printf("proxy-uri not provided so starting in proxy-only mode\n")
+		proxyOnlyMode = true
 	}
 
 	if tunnelURI == "" {
@@ -88,32 +83,50 @@ func main() {
 		}
 	}
 
+	if proxyOnlyMode == false {
+		err := startEdgeProxyReverseTunnel(ca, proxyURI, forwardingAddressesMap, certStrategy, certStrategyOptions)
+		if err != nil {
+			os.Exit(1)
+		}
+	}
+
+	server.StartHTTPTunnel(httpTunnelAddr)
+
+	ch := make(chan bool)
+	<-ch
+}
+
+func startEdgeProxyReverseTunnel(ca string, proxyURI string, forwardingAddressesMap string, certStrategy string, certStrategyOptions cmd.OptionMap) error {
+	var caList *x509.CertPool
+	var err error
+
+	proxyURIParsed, err := url.Parse(proxyURI)
+	if err != nil {
+		fmt.Printf("proxy-uri invalid: %s\n", err.Error())
+		return err
+	}
+
 	var forwardingAddressesMapParsed map[string]string
 
 	err = json.Unmarshal([]byte(forwardingAddressesMap), &forwardingAddressesMapParsed)
-
 	if err != nil {
-		fmt.Printf("forwarding-addresses invalid: %s\n", err.Error())
-		os.Exit(1)
+		fmt.Printf("forwarding-addresses invalid:%s\n", err.Error())
+		return err
 	}
-
-	var caList *x509.CertPool
 
 	if ca != "" {
 		fmt.Printf("Loading CA from %s\n", ca)
 		caList, err = loadCA(ca)
 		if err != nil {
 			fmt.Printf("Unable to load CA from %s: %s\n", ca, err.Error())
-			os.Exit(1)
+			return err
 		}
 	}
-
-	ch := make(chan bool)
 
 	certificate, renewals, err := fog_tls.MakeCertificate(certStrategy, fog_tls.CertStrategyConfig(certStrategyOptions))
 	if err != nil {
 		fmt.Printf("Unable to initialize client certificate: %s\n", err.Error())
-		os.Exit(1)
+		return err
 	}
 
 	go func() {
@@ -173,9 +186,7 @@ func main() {
 		}
 	}(certificate)
 
-	server.StartHTTPTunnel(httpTunnelAddr)
-	<-ch
-
+	return nil
 }
 
 func loadCA(caFile string) (*x509.CertPool, error) {
