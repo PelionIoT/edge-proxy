@@ -32,8 +32,6 @@ import (
 	"github.com/PelionIoT/edge-proxy/cmd"
 	"github.com/PelionIoT/edge-proxy/server"
 	fog_tls "github.com/PelionIoT/edge-proxy/tls"
-	"github.com/PelionIoT/remotedialer"
-	"github.com/gorilla/websocket"
 )
 
 const TunnelBackoffSeconds = 10
@@ -49,6 +47,100 @@ var useL4Proxy bool
 var certStrategyOptions cmd.OptionMap = cmd.OptionMap{}
 var forwardingAddressesMap string
 var httpTunnelAddr string
+var proxyOnlyMode bool
+
+func startEdgeProxyReverseTunnel(ca string, proxyURI string, forwardingAddressesMap string, certStrategy string, certStrategyOptions cmd.OptionMap) error {
+	var caList *x509.CertPool
+	var err error
+
+	proxyURIParsed, err := url.Parse(proxyURI)
+	if err != nil {
+		fmt.Printf("proxy-uri invalid: %s\n", err.Error())
+		return err
+	}
+
+	var forwardingAddressesMapParsed map[string]string
+
+	err = json.Unmarshal([]byte(forwardingAddressesMap), &forwardingAddressesMapParsed)
+	if err != nil {
+		fmt.Printf("forwarding-addresses invalid:%s\n", err.Error())
+		return err
+	}
+
+	if ca != "" {
+		fmt.Printf("Loading CA from %s\n", ca)
+		caList, err = loadCA(ca)
+		if err != nil {
+			fmt.Printf("Unable to load CA from %s: %s\n", ca, err.Error())
+			return err
+		}
+	}
+
+	certificate, renewals, err := fog_tls.MakeCertificate(certStrategy, fog_tls.CertStrategyConfig(certStrategyOptions))
+	if err != nil {
+		fmt.Printf("Unable to initialize client certificate: %s\n", err.Error())
+		return err
+	}
+
+	go func() {
+		for {
+			fmt.Printf("Establishing edge-proxy reverse tunnel (tunnelURI=%s)\n", tunnelURI)
+
+			remotedialer.ClientConnect(tunnelURI, http.Header{}, &websocket.Dialer{
+				NetDial: func(network, address string) (net.Conn, error) {
+					netDialer := &net.Dialer{}
+					return netDialer.Dial("tcp", proxyAddr)
+				},
+			}, func(string, string) bool { return true }, func(ctx context.Context) error {
+				fmt.Printf("edge-proxy reverse tunnel established\n")
+				return nil
+			})
+
+			fmt.Printf("edge-proxy tunnel exited. Attempting to reestablish tunnel in %d seconds...\n", TunnelBackoffSeconds)
+			time.Sleep(time.Second * TunnelBackoffSeconds)
+		}
+	}()
+
+	go func(cert *tls.Certificate) {
+		for {
+			childCtx, cancelChildCtx := context.WithCancel(context.Background())
+
+			go func() {
+				c := <-renewals
+				cert = c
+				fmt.Print("edge-proxy received a renewal cert. Proxy server should be re-launched with the new cert...\n")
+				cancelChildCtx()
+			}()
+
+			if useL4Proxy {
+				fmt.Printf("Starting edge TLS proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
+				server.RunEdgeTLSProxyServer(childCtx, proxyAddr, proxyURIParsed, caList, cert)
+				fmt.Printf("Edge TLS proxy server exited\n")
+			} else {
+				fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
+
+				proxyForEdge := func(req *http.Request) (*url.URL, error) {
+					if externalHTTPProxyURI != "" {
+						var proxy *url.URL
+						proxy, err := url.Parse(externalHTTPProxyURI)
+						if err == nil {
+							return proxy, nil
+						}
+					}
+					return nil, nil
+				}
+
+				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert, proxyForEdge)
+				fmt.Printf("Edge HTTP proxy server exited\n")
+			}
+
+			fmt.Printf("edge-proxy proxy server shut down. Attemtping to re-launch proxy server in %d seconds...\n", ServerBackoffSeconds)
+			<-time.After(time.Second * ServerBackoffSeconds)
+		}
+	}(certificate)
+
+	return nil
+}
 
 func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
@@ -63,23 +155,14 @@ func main() {
 	flag.StringVar(&httpTunnelAddr, "http-tunnel-listen", "localhost:8888", "Listen address for HTTP (CONNECT) tunnel server")
 	flag.Parse()
 
+	proxyOnlyMode = false
 	if proxyURI == "" {
-		fmt.Printf("proxy-uri must be provided\n")
-
-		os.Exit(1)
-	}
-
-	proxyURIParsed, err := url.Parse(proxyURI)
-
-	if err != nil {
-		fmt.Printf("proxy-uri invalid: %s\n", err.Error())
-
-		os.Exit(1)
+		fmt.Printf("proxy-uri not provided so starting in proxy-only mode\n")
+		proxyOnlyMode = true
 	}
 
 	if tunnelURI == "" {
 		fmt.Printf("tunnel-uri must be provided\n")
-
 		os.Exit(1)
 	}
 
@@ -87,114 +170,21 @@ func main() {
 		_, err := url.Parse(externalHTTPProxyURI)
 		if err != nil {
 			fmt.Printf("extern-http-proxy-uri invalid: %s\n", err.Error())
-
 			os.Exit(1)
 		}
 	}
 
-	var forwardingAddressesMapParsed map[string]string
-
-	err = json.Unmarshal([]byte(forwardingAddressesMap), &forwardingAddressesMapParsed)
-
-	if err != nil {
-		fmt.Printf("forwarding-addresses invalid: %s\n", err.Error())
-
-		os.Exit(1)
-	}
-
-	var caList *x509.CertPool
-
-	if ca != "" {
-		fmt.Printf("Loading CA from %s\n", ca)
-
-		caList, err = loadCA(ca)
-
+	if proxyOnlyMode == false {
+		err := startEdgeProxyReverseTunnel(ca, proxyURI, forwardingAddressesMap, certStrategy, certStrategyOptions)
 		if err != nil {
-			fmt.Printf("Unable to load CA from %s: %s\n", ca, err.Error())
-
 			os.Exit(1)
 		}
 	}
-
-	ch := make(chan bool)
-
-	certificate, renewals, err := fog_tls.MakeCertificate(certStrategy, fog_tls.CertStrategyConfig(certStrategyOptions))
-
-	if err != nil {
-		fmt.Printf("Unable to initialize client certificate: %s\n", err.Error())
-
-		os.Exit(1)
-	}
-
-	go func() {
-		for {
-			fmt.Printf("Establishing edge-proxy reverse tunnel (tunnelURI=%s)\n", tunnelURI)
-
-			remotedialer.ClientConnect(tunnelURI, http.Header{}, &websocket.Dialer{
-				NetDial: func(network, address string) (net.Conn, error) {
-					netDialer := &net.Dialer{}
-					return netDialer.Dial("tcp", proxyAddr)
-				},
-			}, func(string, string) bool { return true }, func(ctx context.Context) error {
-				fmt.Printf("edge-proxy reverse tunnel established\n")
-
-				return nil
-			})
-
-			fmt.Printf("edge-proxy tunnel exited. Attempting to reestablish tunnel in %d seconds...\n", TunnelBackoffSeconds)
-
-			time.Sleep(time.Second * TunnelBackoffSeconds)
-		}
-	}()
-
-	go func(cert *tls.Certificate) {
-		for {
-			childCtx, cancelChildCtx := context.WithCancel(context.Background())
-
-			go func() {
-				c := <-renewals
-				cert = c
-				fmt.Print("edge-proxy received a renewal cert. Proxy server should be re-launched with the new cert...\n")
-
-				cancelChildCtx()
-			}()
-
-			if useL4Proxy {
-				fmt.Printf("Starting edge TLS proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
-
-				server.RunEdgeTLSProxyServer(childCtx, proxyAddr, proxyURIParsed, caList, cert)
-
-				fmt.Printf("Edge TLS proxy server exited\n")
-			} else {
-				fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
-
-				proxyForEdge := func(req *http.Request) (*url.URL, error) {
-
-					if externalHTTPProxyURI != "" {
-						var proxy *url.URL
-						proxy, err := url.Parse(externalHTTPProxyURI)
-						if err == nil {
-							return proxy, nil
-						}
-					}
-
-					return nil, nil
-				}
-
-				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert, proxyForEdge)
-
-				fmt.Printf("Edge HTTP proxy server exited\n")
-			}
-
-			fmt.Printf("edge-proxy proxy server shut down. Attemtping to re-launch proxy server in %d seconds...\n", ServerBackoffSeconds)
-
-			<-time.After(time.Second * ServerBackoffSeconds)
-		}
-	}(certificate)
 
 	server.StartHTTPTunnel(httpTunnelAddr)
-	<-ch
 
+	ch := make(chan bool)
+	<-ch
 }
 
 func loadCA(caFile string) (*x509.CertPool, error) {
