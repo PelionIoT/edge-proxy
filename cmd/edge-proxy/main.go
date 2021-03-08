@@ -65,7 +65,6 @@ func main() {
 
 	if proxyURI == "" {
 		fmt.Printf("proxy-uri must be provided\n")
-
 		os.Exit(1)
 	}
 
@@ -73,13 +72,11 @@ func main() {
 
 	if err != nil {
 		fmt.Printf("proxy-uri invalid: %s\n", err.Error())
-
 		os.Exit(1)
 	}
 
 	if tunnelURI == "" {
 		fmt.Printf("tunnel-uri must be provided\n")
-
 		os.Exit(1)
 	}
 
@@ -87,7 +84,6 @@ func main() {
 		_, err := url.Parse(externalHTTPProxyURI)
 		if err != nil {
 			fmt.Printf("extern-http-proxy-uri invalid: %s\n", err.Error())
-
 			os.Exit(1)
 		}
 	}
@@ -98,7 +94,6 @@ func main() {
 
 	if err != nil {
 		fmt.Printf("forwarding-addresses invalid: %s\n", err.Error())
-
 		os.Exit(1)
 	}
 
@@ -106,12 +101,9 @@ func main() {
 
 	if ca != "" {
 		fmt.Printf("Loading CA from %s\n", ca)
-
 		caList, err = loadCA(ca)
-
 		if err != nil {
 			fmt.Printf("Unable to load CA from %s: %s\n", ca, err.Error())
-
 			os.Exit(1)
 		}
 	}
@@ -119,10 +111,8 @@ func main() {
 	ch := make(chan bool)
 
 	certificate, renewals, err := fog_tls.MakeCertificate(certStrategy, fog_tls.CertStrategyConfig(certStrategyOptions))
-
 	if err != nil {
 		fmt.Printf("Unable to initialize client certificate: %s\n", err.Error())
-
 		os.Exit(1)
 	}
 
@@ -137,12 +127,10 @@ func main() {
 				},
 			}, func(string, string) bool { return true }, func(ctx context.Context) error {
 				fmt.Printf("edge-proxy reverse tunnel established\n")
-
 				return nil
 			})
 
 			fmt.Printf("edge-proxy tunnel exited. Attempting to reestablish tunnel in %d seconds...\n", TunnelBackoffSeconds)
-
 			time.Sleep(time.Second * TunnelBackoffSeconds)
 		}
 	}()
@@ -155,21 +143,17 @@ func main() {
 				c := <-renewals
 				cert = c
 				fmt.Print("edge-proxy received a renewal cert. Proxy server should be re-launched with the new cert...\n")
-
 				cancelChildCtx()
 			}()
 
 			if useL4Proxy {
 				fmt.Printf("Starting edge TLS proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
-
 				server.RunEdgeTLSProxyServer(childCtx, proxyAddr, proxyURIParsed, caList, cert)
-
 				fmt.Printf("Edge TLS proxy server exited\n")
 			} else {
 				fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
 
 				proxyForEdge := func(req *http.Request) (*url.URL, error) {
-
 					if externalHTTPProxyURI != "" {
 						var proxy *url.URL
 						proxy, err := url.Parse(externalHTTPProxyURI)
@@ -177,17 +161,14 @@ func main() {
 							return proxy, nil
 						}
 					}
-
 					return nil, nil
 				}
 
 				server.RunEdgeHTTPProxyServer(childCtx, proxyAddr, forwardingAddresses(proxyURIParsed, forwardingAddressesMapParsed), caList, cert, proxyForEdge)
-
 				fmt.Printf("Edge HTTP proxy server exited\n")
 			}
 
 			fmt.Printf("edge-proxy proxy server shut down. Attemtping to re-launch proxy server in %d seconds...\n", ServerBackoffSeconds)
-
 			<-time.After(time.Second * ServerBackoffSeconds)
 		}
 	}(certificate)
