@@ -90,7 +90,7 @@ func main() {
 		}
 	}
 
-	server.StartHTTPTunnel(httpTunnelAddr)
+	server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI)
 
 	ch := make(chan bool)
 	<-ch
