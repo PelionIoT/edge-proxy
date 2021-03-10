@@ -30,6 +30,7 @@ func StartHTTPTunnel(addr string, externalProxy string) {
 	}
 	proxy.OnRequest().DoFunc(
 		func(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+			// Leave the request untouched.  Log a message for debugging purposes.
 			log.Printf("HTTP Tunnel: got request %s\n", r.URL)
 			return r, nil
 		})
