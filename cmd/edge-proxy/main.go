@@ -50,6 +50,8 @@ var certStrategyOptions cmd.OptionMap = cmd.OptionMap{}
 var forwardingAddressesMap string
 var httpTunnelAddr string
 var proxyOnlyMode bool
+var tlsCert string
+var tlsKey string
 
 func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
@@ -62,6 +64,8 @@ func main() {
 	flag.Var(&certStrategyOptions, "cert-strategy-options", "Can be specified one or more times. Must be a key-value pair (<key>=<value>)")
 	flag.StringVar(&forwardingAddressesMap, "forwarding-addresses", "{}", "Map of local address to forwarded address for outgoing HTTP requests. For each forwarding request received at proxy-listen, the destination URI in the request is rewritten based on this map, where the destination server is replaced with the value of the corresponding key.  If the destination server isn't found in this map, then the value of proxy-uri is used.  Must be a json string")
 	flag.StringVar(&httpTunnelAddr, "http-tunnel-listen", "localhost:8888", "Listen address for HTTP (CONNECT) tunnel server")
+	flag.StringVar(&tlsCert, "tls-cert", "", "File name and path to the tls certificate /path/file.crt")
+	flag.StringVar(&tlsKey, "tls-key", "", "File name and path to the tls key /path/file.key")
 	flag.Parse()
 
 	proxyOnlyMode = false
@@ -86,6 +90,20 @@ func main() {
 	if proxyOnlyMode == false {
 		err := startEdgeProxyReverseTunnel(ca, proxyURI, forwardingAddressesMap, certStrategy, certStrategyOptions)
 		if err != nil {
+			os.Exit(1)
+		}
+	}
+
+	if tlsCert != "" {
+		if tlsKey == "" {
+			fmt.Printf("If you provide a TLS Certificate file you must also provide a TLS Key file.\n")
+			os.Exit(1)
+		}
+	}
+
+	if tlsKey != "" {
+		if tlsCert == "" {
+			fmt.Printf("If you provide a TLS Key file you must also provide a TLS Certificate file.\n")
 			os.Exit(1)
 		}
 	}
