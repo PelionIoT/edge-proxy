@@ -40,8 +40,16 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
 		})
 
 	if certFile == "" || KeyFile == "" {
-		http.ListenAndServe(addr, proxy)
+		log.Printf("HTTP Tunnel: not using TLS\n")
+		err := http.ListenAndServe(addr, proxy)
+		if err != nil {
+			log.Printf("HTTP Tunnel encountered an error while starting: %s\n", err.Error())
+		}
 	} else {
-		http.ListenAndServeTLS(addr, certFile, KeyFile, proxy)
+		log.Printf("HTTP Tunnel: using TLS\n")
+		err := http.ListenAndServeTLS(addr, certFile, KeyFile, proxy)
+		if err != nil {
+			log.Printf("HTTP Tunnel over TLS encountered an error while starting: %s\n", err.Error())
+		}
 	}
 }
