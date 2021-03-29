@@ -18,7 +18,11 @@ import (
 
 // StartHTTPTunnel starts a server that accepts to the HTTP CONNECT method to proxy arbitrary TCP connections.
 // It can be used to tunnel HTTPS connections.
-func StartHTTPTunnel(addr string, externalProxy string) {
+func StartHTTPTunnel(addr, externalProxy string) {
+	StartHTTPSTunnel(addr, externalProxy, "", "")
+}
+
+func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
 	log.Printf("Starting HTTPS proxy on %s\n", addr)
 	proxy := goproxy.NewProxyHttpServer()
 
@@ -35,5 +39,9 @@ func StartHTTPTunnel(addr string, externalProxy string) {
 			return r, nil
 		})
 
-	http.ListenAndServe(addr, proxy)
+	if certFile == "" || KeyFile == "" {
+		http.ListenAndServe(addr, proxy)
+	} else {
+		http.ListenAndServeTLS(addr, certFile, KeyFile, proxy)
+	}
 }
