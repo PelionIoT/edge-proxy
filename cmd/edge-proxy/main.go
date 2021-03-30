@@ -50,8 +50,9 @@ var certStrategyOptions cmd.OptionMap = cmd.OptionMap{}
 var forwardingAddressesMap string
 var httpTunnelAddr string
 var proxyOnlyMode bool
-var tlsCert string
-var tlsKey string
+var httpsTunnelAddr string
+var httpsTunnelTLSCert string
+var httpsTunnelTLSKey string
 
 func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
@@ -64,8 +65,9 @@ func main() {
 	flag.Var(&certStrategyOptions, "cert-strategy-options", "Can be specified one or more times. Must be a key-value pair (<key>=<value>)")
 	flag.StringVar(&forwardingAddressesMap, "forwarding-addresses", "{}", "Map of local address to forwarded address for outgoing HTTP requests. For each forwarding request received at proxy-listen, the destination URI in the request is rewritten based on this map, where the destination server is replaced with the value of the corresponding key.  If the destination server isn't found in this map, then the value of proxy-uri is used.  Must be a json string")
 	flag.StringVar(&httpTunnelAddr, "http-tunnel-listen", "localhost:8888", "Listen address for HTTP (CONNECT) tunnel server")
-	flag.StringVar(&tlsCert, "tls-cert", "", "File name and path to the tls certificate /path/file.crt")
-	flag.StringVar(&tlsKey, "tls-key", "", "File name and path to the tls key /path/file.key")
+	flag.StringVar(&httpsTunnelAddr, "https-tunnel-listen", "", "Listen address for HTTPS (CONNECT) tunnel server over TLS.  Both tunnels can be served at the same time.")
+	flag.StringVar(&httpsTunnelTLSCert, "https-tunnel-tls-cert", "", "For the HTTPS tunnel, specify file name and path to the TLS certificate /path/file.crt")
+	flag.StringVar(&httpsTunnelTLSKey, "https-tunnel-tls-key", "", "For the HTTPS tunnel, specify file name and path to the TLS key /path/file.key")
 	flag.Parse()
 
 	proxyOnlyMode = false
@@ -94,21 +96,34 @@ func main() {
 		}
 	}
 
-	if tlsCert != "" {
-		if tlsKey == "" {
-			fmt.Printf("If you provide a TLS Certificate file you must also provide a TLS Key file.\n")
+	enableHTTPSTunnel := false
+	if httpsTunnelAddr != "" || httpsTunnelTLSCert != "" || httpsTunnelTLSKey != "" {
+		if httpsTunnelAddr == "" {
+			fmt.Printf("You must also provide a tunnel address in order to enable the HTTPS tunnel.\n")
 			os.Exit(1)
 		}
-	}
 
-	if tlsKey != "" {
-		if tlsCert == "" {
-			fmt.Printf("If you provide a TLS Key file you must also provide a TLS Certificate file.\n")
+		if httpsTunnelTLSCert == "" {
+			fmt.Printf("You must also provide a TLS cert file in order to enable the HTTPS tunnel.\n")
 			os.Exit(1)
 		}
+
+		if httpsTunnelTLSKey == "" {
+			fmt.Printf("You must also provide a TLS key file in order to enable the HTTPS tunnel.\n")
+			os.Exit(1)
+		}
+		enableHTTPSTunnel = true
 	}
 
-	server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI)
+	go func() {
+		server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI)
+	}()
+
+	go func() {
+		if enableHTTPSTunnel {
+			server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, httpsTunnelTLSCert, httpsTunnelTLSKey)
+		}
+	}()
 
 	ch := make(chan bool)
 	<-ch

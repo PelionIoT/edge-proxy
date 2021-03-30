@@ -23,7 +23,6 @@ func StartHTTPTunnel(addr, externalProxy string) {
 }
 
 func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
-	log.Printf("Starting HTTPS proxy on %s\n", addr)
 	proxy := goproxy.NewProxyHttpServer()
 
 	if externalProxy != "" {
@@ -40,13 +39,13 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
 		})
 
 	if certFile == "" || KeyFile == "" {
-		log.Printf("HTTP Tunnel: not using TLS\n")
+		log.Printf("HTTP Tunnel: starting a plain HTTP tunnel on %s\n", addr)
 		err := http.ListenAndServe(addr, proxy)
 		if err != nil {
 			log.Printf("HTTP Tunnel encountered an error while starting: %s\n", err.Error())
 		}
 	} else {
-		log.Printf("HTTP Tunnel: using TLS\n")
+		log.Printf("HTTP Tunnel: starting HTTP tunnel over TLS on %s\n", addr)
 		err := http.ListenAndServeTLS(addr, certFile, KeyFile, proxy)
 		if err != nil {
 			log.Printf("HTTP Tunnel over TLS encountered an error while starting: %s\n", err.Error())
