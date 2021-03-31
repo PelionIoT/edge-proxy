@@ -89,13 +89,6 @@ func main() {
 		}
 	}
 
-	if proxyOnlyMode == false {
-		err := startEdgeProxyReverseTunnel(ca, proxyURI, forwardingAddressesMap, certStrategy, certStrategyOptions)
-		if err != nil {
-			os.Exit(1)
-		}
-	}
-
 	enableHTTPSTunnel := false
 	if httpsTunnelAddr != "" || httpsTunnelTLSCert != "" || httpsTunnelTLSKey != "" {
 		if httpsTunnelAddr == "" {
@@ -115,15 +108,22 @@ func main() {
 		enableHTTPSTunnel = true
 	}
 
+	if proxyOnlyMode == false {
+		err := startEdgeProxyReverseTunnel(ca, proxyURI, forwardingAddressesMap, certStrategy, certStrategyOptions)
+		if err != nil {
+			os.Exit(1)
+		}
+	}
+
 	go func() {
 		server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI)
 	}()
 
-	go func() {
-		if enableHTTPSTunnel {
+	if enableHTTPSTunnel {
+		go func() {
 			server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, httpsTunnelTLSCert, httpsTunnelTLSKey)
-		}
-	}()
+		}()
+	}
 
 	ch := make(chan bool)
 	<-ch
