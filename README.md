@@ -33,7 +33,7 @@ Notes
 
 # HTTP(S) Tunnels
 
-Edge-proxy has the option for tunneling traffic over HTTP CONNECT.  This can be done over a TLS connection and/or a non-TLS plain HTTP connection.  At maximum, one plain and one TLS tunnel can be specified.  The following command line options specify the HTTP(S) tunnels.
+Edge-proxy has the option for tunneling traffic over HTTP CONNECT.  This can be done over a TLS connection and/or a non-TLS plain HTTP connection.  At maximum, one plain and one TLS tunnel can be specified.  The following command line options specify the HTTP(S) tunnels.  These options are independent of the `-cert-strategy` and `-cert-strategy-options` options, as they control different proxy services.
 
 ```
   -http-tunnel-listen string
