@@ -30,3 +30,18 @@ Proxy routing:
 Notes
 - All requests from edge-proxy to the cloud are done over HTTPS
 - The path component of the URL is never changed for a proxied request
+
+# HTTP(S) Tunnels
+
+Edge-proxy has the option for tunneling traffic over HTTP CONNECT.  This can be done over a TLS connection and/or a non-TLS plain HTTP connection.  At maximum, one plain and one TLS tunnel can be specified.  The following command line options specify the HTTP(S) tunnels.  These options are independent of the `-cert-strategy` and `-cert-strategy-options` options, as they control different proxy services.
+
+```
+  -http-tunnel-listen string
+    	Listen address for HTTP (CONNECT) tunnel server (default "localhost:8888")
+  -https-tunnel-listen string
+    	Listen address for HTTPS (CONNECT) tunnel server over TLS.  Both tunnels can be served at the same time.
+  -https-tunnel-tls-cert string
+    	For the HTTPS tunnel, specify file name and path to the TLS certificate /path/file.crt
+  -https-tunnel-tls-key string
+    	For the HTTPS tunnel, specify file name and path to the TLS key /path/file.key
+```
