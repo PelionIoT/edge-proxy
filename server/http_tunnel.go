@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/elazarl/goproxy"
+	"github.com/elazarl/goproxy/ext/auth"
 )
 
 /*
@@ -19,10 +20,10 @@ import (
 // StartHTTPTunnel starts a server that accepts to the HTTP CONNECT method to proxy arbitrary TCP connections.
 // It can be used to tunnel HTTPS connections.
 func StartHTTPTunnel(addr, externalProxy string) {
-	StartHTTPSTunnel(addr, externalProxy, "", "")
+	StartHTTPSTunnel(addr, externalProxy, "", "", "", "")
 }
 
-func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
+func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password string) {
 	proxy := goproxy.NewProxyHttpServer()
 
 	if externalProxy != "" {
@@ -31,6 +32,12 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
 		}}
 		proxy.ConnectDial = proxy.NewConnectDialToProxy(externalProxy)
 	}
+
+	proxy.OnRequest().HandleConnectFunc(func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
+		log.Printf("HTTP Tunnel: got CONNECT request %s\n", host)
+		return nil, host
+	})
+
 	proxy.OnRequest().DoFunc(
 		func(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 			// Leave the request untouched.  Log a message for debugging purposes.
@@ -38,7 +45,15 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
 			return r, nil
 		})
 
-	if certFile == "" || KeyFile == "" {
+	if username != "" || password != "" {
+		auth.ProxyBasic(proxy, "tunnel", func(user, passwd string) bool {
+			authorized := (user == username && passwd == password)
+			log.Printf("HTTP Tunnel: user=%s, password=%s, authorized=%t\n", user, password, authorized)
+			return authorized
+		})
+	}
+
+	if certFile == "" || keyFile == "" {
 		log.Printf("HTTP Tunnel: starting a plain HTTP tunnel on %s\n", addr)
 		err := http.ListenAndServe(addr, proxy)
 		if err != nil {
@@ -46,7 +61,7 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, KeyFile string) {
 		}
 	} else {
 		log.Printf("HTTP Tunnel: starting HTTP tunnel over TLS on %s\n", addr)
-		err := http.ListenAndServeTLS(addr, certFile, KeyFile, proxy)
+		err := http.ListenAndServeTLS(addr, certFile, keyFile, proxy)
 		if err != nil {
 			log.Printf("HTTP Tunnel over TLS encountered an error while starting: %s\n", err.Error())
 		}

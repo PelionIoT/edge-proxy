@@ -53,6 +53,8 @@ var proxyOnlyMode bool
 var httpsTunnelAddr string
 var httpsTunnelTLSCert string
 var httpsTunnelTLSKey string
+var httpsTunnelUsername string
+var httpsTunnelPassword string
 
 func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
@@ -68,6 +70,8 @@ func main() {
 	flag.StringVar(&httpsTunnelAddr, "https-tunnel-listen", "", "Listen address for HTTPS (CONNECT) tunnel server over TLS.  Both tunnels can be served at the same time.")
 	flag.StringVar(&httpsTunnelTLSCert, "https-tunnel-tls-cert", "", "For the HTTPS tunnel, specify file name and path to the TLS certificate /path/file.crt")
 	flag.StringVar(&httpsTunnelTLSKey, "https-tunnel-tls-key", "", "For the HTTPS tunnel, specify file name and path to the TLS key /path/file.key")
+	flag.StringVar(&httpsTunnelUsername, "https-tunnel-username", "", "For the HTTPS tunnel only, require this username for basic authentication")
+	flag.StringVar(&httpsTunnelPassword, "https-tunnel-password", "", "For the HTTPS tunnel only, require this password for basic authentication")
 	flag.Parse()
 
 	proxyOnlyMode = false
@@ -121,7 +125,7 @@ func main() {
 
 	if enableHTTPSTunnel {
 		go func() {
-			server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, httpsTunnelTLSCert, httpsTunnelTLSKey)
+			server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, httpsTunnelTLSCert, httpsTunnelTLSKey, httpsTunnelUsername, httpsTunnelPassword)
 		}()
 	}
 
