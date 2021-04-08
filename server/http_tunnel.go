@@ -48,7 +48,7 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password
 	if username != "" || password != "" {
 		auth.ProxyBasic(proxy, "tunnel", func(user, passwd string) bool {
 			authorized := (user == username && passwd == password)
-			log.Printf("HTTP Tunnel: user=%s, password=%s, authorized=%t\n", user, password, authorized)
+			log.Printf("HTTP Tunnel: user=%s, password=%s, authorized=%t\n", user, passwd, authorized)
 			return authorized
 		})
 	}
