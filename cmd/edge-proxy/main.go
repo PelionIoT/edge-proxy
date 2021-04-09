@@ -96,20 +96,31 @@ func main() {
 	enableHTTPSTunnel := false
 	if httpsTunnelAddr != "" || httpsTunnelTLSCert != "" || httpsTunnelTLSKey != "" {
 		if httpsTunnelAddr == "" {
-			fmt.Printf("You must also provide a tunnel address in order to enable the HTTPS tunnel.\n")
+			fmt.Printf("Error: you must also provide a tunnel address in order to enable the HTTPS tunnel.\n")
 			os.Exit(1)
 		}
 
 		if httpsTunnelTLSCert == "" {
-			fmt.Printf("You must also provide a TLS cert file in order to enable the HTTPS tunnel.\n")
+			fmt.Printf("Error: you must also provide a TLS cert file in order to enable the HTTPS tunnel.\n")
 			os.Exit(1)
 		}
 
 		if httpsTunnelTLSKey == "" {
-			fmt.Printf("You must also provide a TLS key file in order to enable the HTTPS tunnel.\n")
+			fmt.Printf("Error: you must also provide a TLS key file in order to enable the HTTPS tunnel.\n")
 			os.Exit(1)
 		}
 		enableHTTPSTunnel = true
+	}
+
+	// XOR
+	if (httpsTunnelUsername == "") != (httpsTunnelPassword == "") {
+		fmt.Printf("Error: you must specify both the HTTPS tunnel username and password, or neither.\n")
+		os.Exit(1)
+	}
+
+	if httpsTunnelUsername != "" && !enableHTTPSTunnel {
+		fmt.Printf("Error: you specified a username and password for the HTTPS tunnel.  You must also specify a listening address, TLS cert and TLS key to enable the HTTPS tunnel.")
+		os.Exit(1)
 	}
 
 	if proxyOnlyMode == false {
