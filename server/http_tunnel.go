@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"log"
 	"net/http"
 	"net/url"
@@ -27,9 +28,19 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password
 	proxy := goproxy.NewProxyHttpServer()
 
 	if externalProxy != "" {
-		proxy.Tr = &http.Transport{Proxy: func(req *http.Request) (*url.URL, error) {
-			return url.Parse(externalProxy)
-		}}
+		u, err := url.Parse(externalProxy)
+		if err != nil {
+			log.Printf("HTTP(S) Tunnel: failed to parse external proxy: %s\n", err.Error())
+			return
+		}
+		proxy.Tr = &http.Transport{
+			Proxy: func(req *http.Request) (*url.URL, error) {
+				return u, nil
+			},
+			TLSClientConfig: &tls.Config{
+				ServerName: u.Hostname(),
+			},
+		}
 		proxy.ConnectDial = proxy.NewConnectDialToProxy(externalProxy)
 	}
 
