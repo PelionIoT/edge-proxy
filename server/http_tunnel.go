@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"net/url"
@@ -41,7 +42,12 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password
 				ServerName: u.Hostname(),
 			},
 		}
-		proxy.ConnectDial = proxy.NewConnectDialToProxy(externalProxy)
+		proxy.ConnectDial = proxy.NewConnectDialToProxyWithHandler(externalProxy, func(req *http.Request) {
+			if u.User != nil {
+				credentials := base64.StdEncoding.EncodeToString([]byte(u.User.String()))
+				req.Header.Add("Proxy-Authorization", "Basic "+credentials)
+			}
+		})
 	}
 
 	proxy.OnRequest().HandleConnectFunc(func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
