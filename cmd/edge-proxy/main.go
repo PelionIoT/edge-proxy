@@ -131,12 +131,18 @@ func main() {
 	}
 
 	go func() {
-		server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI)
+		err := server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI)
+		if err != nil {
+			os.Exit(1)
+		}
 	}()
 
 	if enableHTTPSTunnel {
 		go func() {
-			server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, httpsTunnelTLSCert, httpsTunnelTLSKey, httpsTunnelUsername, httpsTunnelPassword)
+			err := server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, httpsTunnelTLSCert, httpsTunnelTLSKey, httpsTunnelUsername, httpsTunnelPassword)
+			if err != nil {
+				os.Exit(1)
+			}
 		}()
 	}
 

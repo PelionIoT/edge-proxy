@@ -21,18 +21,18 @@ import (
 
 // StartHTTPTunnel starts a server that accepts to the HTTP CONNECT method to proxy arbitrary TCP connections.
 // It can be used to tunnel HTTPS connections.
-func StartHTTPTunnel(addr, externalProxy string) {
-	StartHTTPSTunnel(addr, externalProxy, "", "", "", "")
+func StartHTTPTunnel(addr, externalProxy string) error {
+	return StartHTTPSTunnel(addr, externalProxy, "", "", "", "")
 }
 
-func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password string) {
+func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password string) error {
 	proxy := goproxy.NewProxyHttpServer()
 
 	if externalProxy != "" {
 		u, err := url.Parse(externalProxy)
 		if err != nil {
 			log.Printf("HTTP(S) Tunnel: failed to parse external proxy: %s\n", err.Error())
-			return
+			return err
 		}
 		proxy.Tr = &http.Transport{
 			Proxy: func(req *http.Request) (*url.URL, error) {
@@ -75,12 +75,17 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password
 		err := http.ListenAndServe(addr, proxy)
 		if err != nil {
 			log.Printf("HTTP Tunnel encountered an error while starting: %s\n", err.Error())
+			return err
 		}
 	} else {
 		log.Printf("HTTP Tunnel: starting HTTP tunnel over TLS on %s\n", addr)
 		err := http.ListenAndServeTLS(addr, certFile, keyFile, proxy)
 		if err != nil {
 			log.Printf("HTTP Tunnel over TLS encountered an error while starting: %s\n", err.Error())
+			return err
 		}
 	}
+
+	// Should not get here
+	return nil
 }
