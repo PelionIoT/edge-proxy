@@ -19,6 +19,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -43,6 +44,7 @@ var tunnelURI string
 var proxyURI string
 var proxyAddr string
 var externalHTTPProxyURI string
+var externalHTTPProxyCACert string
 var ca string
 var certStrategy string
 var useL4Proxy bool
@@ -61,6 +63,7 @@ func main() {
 	flag.StringVar(&proxyURI, "proxy-uri", "", "Default server to which outgoing HTTP requests should be forwarded.  See forwarding-addresses option for overrides")
 	flag.StringVar(&proxyAddr, "proxy-listen", "0.0.0.0:8080", "Listen address for HTTP proxy server")
 	flag.StringVar(&externalHTTPProxyURI, "extern-http-proxy-uri", "", "optional external Http proxy for site. For an authenticated proxy, specify the username and password in the URI, as in https://user:pwd@proxy-server:proxy-port")
+	flag.StringVar(&externalHTTPProxyCACert, "extern-http-proxy-cacert", "", "If the external HTTP proxy uses TLS, verify the server certificate against this CA cert, instead of the system root CAs.")
 	flag.BoolVar(&useL4Proxy, "use-l4-proxy", false, "Use a layer 4 proxy instead of a layer 7 proxy")
 	flag.StringVar(&ca, "ca", "", "Certificate authority for the cloud")
 	flag.StringVar(&certStrategy, "cert-strategy", fog_tls.DefaultDriver(), fmt.Sprintf("Certificate strategy must be one of: %v", fog_tls.Drivers()))
@@ -91,6 +94,11 @@ func main() {
 			fmt.Printf("extern-http-proxy-uri invalid: %s\n", err.Error())
 			os.Exit(1)
 		}
+	}
+
+	if externalHTTPProxyCACert != "" && externalHTTPProxyURI == "" {
+		fmt.Printf("extern-http-proxy-cacert can't be used without an extern-http-proxy-uri.\n")
+		os.Exit(1)
 	}
 
 	enableHTTPSTunnel := false
@@ -131,7 +139,7 @@ func main() {
 	}
 
 	go func() {
-		err := server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI)
+		err := server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI, externalHTTPProxyCACert)
 		if err != nil {
 			fmt.Printf("Error encountered while starting HTTP tunnel: %s, quitting.\n", err.Error())
 			os.Exit(1)
@@ -140,7 +148,7 @@ func main() {
 
 	if enableHTTPSTunnel {
 		go func() {
-			err := server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, httpsTunnelTLSCert, httpsTunnelTLSKey, httpsTunnelUsername, httpsTunnelPassword)
+			err := server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, externalHTTPProxyCACert, httpsTunnelTLSCert, httpsTunnelTLSKey, httpsTunnelUsername, httpsTunnelPassword)
 			if err != nil {
 				fmt.Printf("Error encountered while starting HTTPS tunnel: %s, quitting.\n", err.Error())
 				os.Exit(1)
@@ -176,6 +184,23 @@ func startEdgeProxyReverseTunnel(ca string, proxyURI string, forwardingAddresses
 		if err != nil {
 			fmt.Printf("Unable to load CA from %s: %s\n", ca, err.Error())
 			return err
+		}
+	}
+
+	if externalHTTPProxyCACert != "" {
+		if caList == nil {
+			caList = x509.NewCertPool()
+		}
+
+		certs, err := ioutil.ReadFile(externalHTTPProxyCACert)
+		if err != nil {
+			fmt.Printf("Unable to read external HTTP proxy CA cert from %s: %s\n", externalHTTPProxyCACert, err.Error())
+			return err
+		}
+		ok := caList.AppendCertsFromPEM(certs)
+		if !ok {
+			fmt.Printf("Failed to parse external HTTP proxy CA cert: %s", externalHTTPProxyCACert)
+			return errors.New("Failed to parse external HTTP proxy CA cert")
 		}
 	}
 

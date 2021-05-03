@@ -2,7 +2,10 @@ package server
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
+	"errors"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -21,11 +24,11 @@ import (
 
 // StartHTTPTunnel starts a server that accepts to the HTTP CONNECT method to proxy arbitrary TCP connections.
 // It can be used to tunnel HTTPS connections.
-func StartHTTPTunnel(addr, externalProxy string) error {
-	return StartHTTPSTunnel(addr, externalProxy, "", "", "", "")
+func StartHTTPTunnel(addr, externalProxy string, rootCAFile string) error {
+	return StartHTTPSTunnel(addr, externalProxy, rootCAFile, "", "", "", "")
 }
 
-func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password string) error {
+func StartHTTPSTunnel(addr, externalProxy, rootCAFile, certFile, keyFile, username, password string) error {
 	proxy := goproxy.NewProxyHttpServer()
 
 	if externalProxy != "" {
@@ -41,6 +44,23 @@ func StartHTTPSTunnel(addr, externalProxy, certFile, keyFile, username, password
 			TLSClientConfig: &tls.Config{
 				ServerName: u.Hostname(),
 			},
+		}
+		if rootCAFile != "" {
+			// Use user defined root CA
+			certs, err := ioutil.ReadFile(rootCAFile)
+			if err != nil {
+				log.Printf("HTTP(S) Tunnel: failed to read root CA file: %s\n", err.Error())
+				return err
+			}
+
+			rootCAPool := x509.NewCertPool()
+			ok := rootCAPool.AppendCertsFromPEM(certs)
+			if !ok {
+				log.Printf("HTTP(S) Tunnel: failed to parse root CA file: %s\n", rootCAFile)
+				return errors.New("Failed to parse root CA certificate file.")
+			}
+
+			proxy.Tr.TLSClientConfig.RootCAs = rootCAPool
 		}
 		proxy.ConnectDial = proxy.NewConnectDialToProxyWithHandler(externalProxy, func(req *http.Request) {
 			if u.User != nil {
