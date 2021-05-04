@@ -139,7 +139,11 @@ func main() {
 	}
 
 	go func() {
-		err := server.StartHTTPTunnel(httpTunnelAddr, externalHTTPProxyURI, externalHTTPProxyCACert)
+		err := server.StartHTTPTunnel(&server.HTTPTunnelConfig{
+			Addr:          httpTunnelAddr,
+			ExternalProxy: externalHTTPProxyURI,
+			RootCAFile:    externalHTTPProxyCACert,
+		})
 		if err != nil {
 			fmt.Printf("Error encountered while starting HTTP tunnel: %s, quitting.\n", err.Error())
 			os.Exit(1)
@@ -148,7 +152,15 @@ func main() {
 
 	if enableHTTPSTunnel {
 		go func() {
-			err := server.StartHTTPSTunnel(httpsTunnelAddr, externalHTTPProxyURI, externalHTTPProxyCACert, httpsTunnelTLSCert, httpsTunnelTLSKey, httpsTunnelUsername, httpsTunnelPassword)
+			err := server.StartHTTPSTunnel(&server.HTTPSTunnelConfig{
+				Addr:          httpsTunnelAddr,
+				ExternalProxy: externalHTTPProxyURI,
+				RootCAFile:    externalHTTPProxyCACert,
+				CertFile:      httpsTunnelTLSCert,
+				KeyFile:       httpsTunnelTLSKey,
+				Username:      httpsTunnelUsername,
+				Password:      httpsTunnelPassword,
+			})
 			if err != nil {
 				fmt.Printf("Error encountered while starting HTTPS tunnel: %s, quitting.\n", err.Error())
 				os.Exit(1)
