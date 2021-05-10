@@ -103,9 +103,20 @@ func main() {
 
 func startWSTunnel(connect string, listen string) error {
 	var err error
+	var config server.WSTunnelConfig
 
 	if connect == "" || listen == "" {
 		err = errors.New("empty parameters")
+		return err
+	}
+
+	config.ListenAddr = listen
+	config.TunnelAddr = connect
+
+	err = server.StartWSTunnel(&config)
+
+	if err != nil {
+		fmt.Printf("error starting wstunnel: %s\n", err.Error())
 		return err
 	}
 
