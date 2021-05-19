@@ -2,12 +2,17 @@ package server
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/elazarl/goproxy"
+	"github.com/gorilla/websocket"
 )
 
 /*
@@ -20,6 +25,35 @@ type WSTunnelConfig struct {
 	TunnelAddr string // Address of the remote wsTunnel server
 }
 
+type WSTunnelConnection struct {
+	wc *websocket.Conn
+	r  io.Reader // Current reader
+}
+
+func (wsc WSTunnelConnection) Read(b []byte) (int, error) {
+	// read some
+	if wsc.r == nil {
+		for {
+			messageType, r, err := wsc.wc.NextReader()
+			if err != nil {
+				return 0, err
+			}
+			if messageType == websocket.BinaryMessage {
+				wsc.r = r
+				break
+			}
+		}
+	}
+
+	n, err := wsc.r.Read(b)
+	if err == io.EOF {
+		wsc.r = nil
+		return n, nil
+	} else {
+		return n, err
+	}
+}
+
 // StartWSTunnel starts a server that accepts HTTP CONNECT method to proxy arbitrary TCP connections.
 //
 func StartWSTunnel(config *WSTunnelConfig) error {
@@ -27,7 +61,7 @@ func StartWSTunnel(config *WSTunnelConfig) error {
 
 	_, err := url.Parse(config.TunnelAddr)
 	if err != nil {
-		log.Printf("HTTP(S) Tunnel: failed to parse external proxy: %s\n", err.Error())
+		log.Printf("WebSocket Tunnel: failed to parse external proxy: %s\n", err.Error())
 		return err
 	}
 	proxy.Tr = &http.Transport{
@@ -37,9 +71,19 @@ func StartWSTunnel(config *WSTunnelConfig) error {
 		},
 	}
 	proxy.ConnectDial = func(network string, addr string) (net.Conn, error) {
-		// TODO: handle connecting to a new address
-		// network: "tcp", maybe "tcp6"
-		// addr: a URL, something like "https://www.example.com"
+		path, err := wsTunnelPathFromConnectAddr(addr)
+		if err != nil {
+			return nil, err
+		}
+		u := url.URL{Scheme: "ws", Host: config.TunnelAddr, Path: path}
+		log.Printf("WebSocket Tunnel: Connecting to %v", u)
+
+		// TODO: support next proxy
+		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+		if err != nil {
+			return nil, errors.New("Failed to open ws tunnel: " + err.Error())
+		}
+
 		return nil, errors.New("Not implemented.")
 	}
 
@@ -64,4 +108,21 @@ func StartWSTunnel(config *WSTunnelConfig) error {
 
 	// Should not get here
 	return nil
+}
+
+func wsTunnelPathFromConnectAddr(addr string) (string, error) {
+	parts := strings.Split(addr, ":")
+	if len(parts) == 2 {
+		_, err := strconv.ParseUint(parts[1], 10, 16)
+		if err != nil {
+			return "", errors.New("Failed to parse port")
+		}
+	} else {
+		return "", errors.New("Failed to parse address")
+	}
+
+	host := parts[0]
+	port := parts[1]
+	path := fmt.Sprintf("/wstunnel/tcp/%v/%v", host, port)
+	return path, nil
 }
