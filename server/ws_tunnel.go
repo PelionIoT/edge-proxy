@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/elazarl/goproxy"
 	"github.com/gorilla/websocket"
@@ -54,6 +55,40 @@ func (wsc WSTunnelConnection) Read(b []byte) (int, error) {
 	}
 }
 
+func (wsc WSTunnelConnection) Write(b []byte) (int, error) {
+	err := wsc.wc.WriteMessage(websocket.BinaryMessage, b)
+	return len(b), err
+}
+
+func (wsc WSTunnelConnection) Close() error {
+	return wsc.wc.Close()
+}
+
+func (wsc WSTunnelConnection) LocalAddr() net.Addr {
+	return wsc.wc.LocalAddr()
+}
+
+func (wsc WSTunnelConnection) RemoteAddr() net.Addr {
+	return wsc.wc.RemoteAddr()
+}
+
+func (wsc WSTunnelConnection) SetDeadline(t time.Time) error {
+	err := wsc.wc.SetReadDeadline(t)
+	if err != nil {
+		return err
+	}
+
+	return wsc.wc.SetWriteDeadline(t)
+}
+
+func (wsc WSTunnelConnection) SetReadDeadline(t time.Time) error {
+	return wsc.wc.SetReadDeadline(t)
+}
+
+func (wsc WSTunnelConnection) SetWriteDeadline(t time.Time) error {
+	return wsc.wc.SetWriteDeadline(t)
+}
+
 // StartWSTunnel starts a server that accepts HTTP CONNECT method to proxy arbitrary TCP connections.
 //
 func StartWSTunnel(config *WSTunnelConfig) error {
@@ -84,7 +119,12 @@ func StartWSTunnel(config *WSTunnelConfig) error {
 			return nil, errors.New("Failed to open ws tunnel: " + err.Error())
 		}
 
-		return nil, errors.New("Not implemented.")
+		wsc := &WSTunnelConnection{
+			wc: conn,
+			r:  nil,
+		}
+
+		return wsc, nil
 	}
 
 	proxy.OnRequest().HandleConnectFunc(func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
