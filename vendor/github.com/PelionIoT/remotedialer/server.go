@@ -79,11 +79,14 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	session := s.sessions.add(clientKey, wsConn, peer)
+	defer s.sessions.remove(session)
+
 	// handle connect callback
 	if s.onConnect != nil {
 		err = s.onConnect(req)
 		if err != nil {
-			logrus.Infof("Error finish Connect qgitCallback function for request [%s]: %v", clientKey, err)
+			logrus.Infof("Error finish Connect Callback function for request [%s]: %v", clientKey, err)
 			return
 		}
 	}
@@ -94,9 +97,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			s.onDisconnect(req)
 		}
 	}()
-
-	session := s.sessions.add(clientKey, wsConn, peer)
-	defer s.sessions.remove(session)
 
 	// Don't need to associate req.Context() to the Session, it will cancel otherwise
 	code, err := session.Serve()
