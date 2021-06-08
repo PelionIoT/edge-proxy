@@ -100,9 +100,8 @@ func (s *Session) stopPings() {
 }
 
 func (s *Session) Serve() (int, error) {
-	if s.client {
-		s.startPings()
-	}
+	// Make both Client and Server ping each other
+	s.startPings()
 
 	for {
 		msType, reader, err := s.conn.NextReader()

@@ -34,7 +34,6 @@ func (w *wsConn) NextReader() (int, io.Reader, error) {
 	return w.conn.NextReader()
 }
 
-// Sync this function to this commit https://github.com/rancher/remotedialer/commit/e5448aaba7eeba2b53d629123617651960ab280c
 func (w *wsConn) setupDeadline() {
 	w.conn.SetReadDeadline(time.Now().Add(PingWaitDuration))
 	w.conn.SetPingHandler(func(string) error {
@@ -44,15 +43,9 @@ func (w *wsConn) setupDeadline() {
 		if err != nil {
 			return err
 		}
-		if err := w.conn.SetReadDeadline(time.Now().Add(PingWaitDuration)); err != nil {
-			return err
-		}
 		return w.conn.SetWriteDeadline(time.Now().Add(PingWaitDuration))
 	})
 	w.conn.SetPongHandler(func(string) error {
-		if err := w.conn.SetReadDeadline(time.Now().Add(PingWaitDuration)); err != nil {
-			return err
-		}
-		return w.conn.SetWriteDeadline(time.Now().Add(PingWaitDuration))
+		return w.conn.SetReadDeadline(time.Now().Add(PingWaitDuration))
 	})
 }
