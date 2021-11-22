@@ -1,0 +1,17 @@
+name: Build
+on: push
+
+jobs:
+  build-standalone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Set up golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.14.4'
+      - name: Run the build
+        run: go build -o edge-proxy cmd/edge-proxy/main.go
+      - name: Run go-vet
+        run: go vet cmd/edge-proxy/main.go
