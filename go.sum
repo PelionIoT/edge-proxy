@@ -1,5 +1,5 @@
-github.com/PelionIoT/remotedialer v1.0.0 h1:uUEfj6aOw79mKzqyWhZwYN0qxUOjKurffsMCCJCEQcc=
-github.com/PelionIoT/remotedialer v1.0.0/go.mod h1:Xqgb3RYPf5vzwGarchdf7zqUhQ2UF4jKjD0VYpCbibo=
+github.com/PelionIoT/remotedialer v1.0.3 h1:ipGeRlVRj327sPsfnpbac4xqFiXlMWO2D8IWnOBB+7A=
+github.com/PelionIoT/remotedialer v1.0.3/go.mod h1:Xqgb3RYPf5vzwGarchdf7zqUhQ2UF4jKjD0VYpCbibo=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e h1:/cwV7t2xezilMljIftb7WlFtzGANRCnoOhPjtl2ifcs=
