@@ -8,26 +8,47 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
       - name: Set up golang
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '1.14.4'
       - name: Run the build
         run: go build -o edge-proxy cmd/edge-proxy/main.go
+
   go-vet:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v3
+      - name: Set up golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
       - name: Run go-vet
-        run: |
-            go version
-            cd cmd
-            go vet
-            cd ../http
-            go vet
-            cd ../rpc
-            go vet
-            cd ../server
-            go vet
-            cd ../tls
-            go vet
+        run: scripts/go_vet_scripts.sh --all
+
+  go-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Set up golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+      - name: Run go-lint
+        run: scripts/go_lint_scripts.sh --all
+
+  run-pysh-check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      # Install pyshcheck tooling
+      - run: sudo apt install pycodestyle pydocstyle black
+      # git instead of rules to use access token
+      - run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
+      - run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      # Linux coreutils is already installed wc -command can be found.
+      - run: git clone git@github.com:PelionIoT/scripts-internal.git
+      #- run: git clone https://github.com/PelionIoT/scripts-internal.git
+      - run: echo "." >scripts-internal/.nopyshcheck
+      - run: scripts-internal/pysh-check/pysh-check.sh --workdir .
