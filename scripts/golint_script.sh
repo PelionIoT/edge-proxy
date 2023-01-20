@@ -6,7 +6,7 @@
 # Use --all option to run golint on all folders, irrespective of findings.
 #
 # By default golint will not raise an error code, even if it has found something.
-# Therefore we mimick that kind of behaviour. Error code will be raised if --al
+# Therefore we mimick that kind of behaviour. Error code will be raised if --all
 # is used and even one folder has something.
 #
 NORM="\u001b[0m"
@@ -43,6 +43,7 @@ godirs=$(find . -iname '*.go' |sort | awk 'BEGIN { FS = "/" } ; {print $2}' | un
 mapfile -t godirs_array <<< "$godirs"
 curdir=$(pwd)
 retcode=0
+total_hits=0
 for godir in "${godirs_array[@]}"
 do
     echo -e "${BLUE}Running golint on $godir${NORM}"
@@ -50,6 +51,7 @@ do
     golint
     # Number of hits from golint
     hits=$(golint | wc -l)
+    total_hits=$((total_hits + hits))
     if [ "$hits" != "0" ]
     then
         retcode=2
@@ -64,7 +66,7 @@ done
 cd "$curdir"
 if [ $retcode != "0" ]
 then
-    echo -e "${BOLD}${RED}Done, there are findings.${NORM}"
+    echo -e "${BOLD}${RED}Done, there are $total_hits findings.${NORM}"
 else
     echo -e "${BOLD}${BLUE}Done, clean run.${NORM}"
 fi
