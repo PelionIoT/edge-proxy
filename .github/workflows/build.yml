@@ -1,6 +1,11 @@
 name: Build
 on: push
 
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: edge-proxy-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
 jobs:
   build-standalone:
     runs-on: ubuntu-latest
