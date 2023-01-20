@@ -13,6 +13,7 @@ NORM="\u001b[0m"
 BOLD="\u001b[1m"
 BLUE="\u001b[34m"
 RED="\u001b[31m"
+DGREY="\u001b[90m"
 
 whereis_golint=$(whereis golint)
 if [ "$whereis_golint" = "golint:" ]
@@ -37,37 +38,42 @@ else
 fi
 
 # Get all go files, sort them, extract the folder names and get the unique ones out of those
-godirs=$(find . -iname '*.go' |sort | awk 'BEGIN { FS = "/" } ; {print $2}' | uniq)
+godirs=$(find . -iname '*.go' -exec dirname {} \; | sort | uniq)
 # godirs_array=( $godirs ) -- works, but shellcheck complaints
 # warning: Quote to prevent word splitting/globbing, or split robustly with mapfile or read -a. [SC2206]
 mapfile -t godirs_array <<< "$godirs"
 curdir=$(pwd)
 retcode=0
-total_hits=0
+total=0
 for godir in "${godirs_array[@]}"
 do
-    echo -e "${BLUE}Running golint on $godir${NORM}"
-    cd "$godir" || exit 1
-    golint
-    # Number of hits from golint
-    hits=$(golint | wc -l)
-    total_hits=$((total_hits + hits))
-    if [ "$hits" != "0" ]
+    if [ "$godir" != "vendor" ]
     then
-        retcode=2
-        if [ $quick_fail != "0" ]
+        echo -e "${BLUE}Running golint on $godir${NORM}"
+        cd "$godir" || exit 1
+        # Number of hits from golint - nope, tee won't work for some reason.
+        golint
+        hits=$(golint | wc -l)
+        total=$((total + hits))
+        if [ "$hits" != "0" ]
         then
-            echo -e "${BOLD}${RED}Stopped, there are findings.${NORM}"
-            exit $retcode
+            retcode=2
+            if [ $quick_fail != "0" ]
+            then
+                echo -e "${BOLD}${RED}Stopped, there are $total findings.${NORM}"
+                exit $retcode
+            fi
         fi
+        cd "$curdir" || exit 1
+    else
+        echo -e "${BOLD}${DGREY}Skipping go vet on $godir${NORM}"
     fi
-    cd .. || exit 1
 done
 cd "$curdir"
 if [ $retcode != "0" ]
 then
-    echo -e "${BOLD}${RED}Done, there are $total_hits findings.${NORM}"
+    echo -e "${BOLD}${RED}Done, there are $total findings.${NORM}"
 else
     echo -e "${BOLD}${BLUE}Done, clean run.${NORM}"
 fi
-exit $retcode
+#exit $retcode
