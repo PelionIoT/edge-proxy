@@ -73,4 +73,5 @@ jobs:
       - run: git clone git@github.com:PelionIoT/scripts-internal.git
       #- run: git clone https://github.com/PelionIoT/scripts-internal.git
       - run: echo "." >scripts-internal/.nopyshcheck
+      - run: echo "." >vendor/.nopyshcheck
       - run: scripts-internal/pysh-check/pysh-check.sh --workdir .
