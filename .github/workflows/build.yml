@@ -7,7 +7,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-standalone:
+  build-all:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -16,8 +16,13 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: '1.14.4'
-      - name: Run the build
-        run: go build -o edge-proxy cmd/edge-proxy/main.go
+      - name: Set GitHub access token via git config
+        run: | 
+          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - run: git clone git@github.com:PelionIoT/scripts-internal.git
+      - name: Build all
+        run: scripts-internal/golang/go_build_script.sh --all
 
   go-vet:
     runs-on: ubuntu-latest
