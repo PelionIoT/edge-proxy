@@ -15,7 +15,7 @@ jobs:
       - name: Set up golang
         uses: actions/setup-go@v3
         with:
-          go-version: '1.14.4'
+          go-version: '1.18'
       - name: Set GitHub access token via git config
         run: | 
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
