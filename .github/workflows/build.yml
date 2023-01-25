@@ -60,6 +60,52 @@ jobs:
       - name: Run golint-checker (findings may not increase)
         run: scripts-internal/ci/more-lines-checker.sh ${{ github.event.repository.default_branch }} ${{ github.ref_name }} "scripts-internal/golang/golint_script.sh --all"
 
+  go-rpc-test:
+    runs-on: ubuntu-latest
+    env: 
+      CLOUD_API_KEY : ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Set up golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+      - name: Set GitHub access token via git config
+        run: | 
+          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - name: Clone scripts-internal and mbed-edge repos
+        run: |
+          git clone git@github.com:PelionIoT/scripts-internal.git
+          git clone git@github.com:PelionIoT/mbed-edge.git
+      - name: Get pre-requisites
+        run: |
+          sudo apt-get update && \
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install tzdata git curl \
+          build-essential libc6-dev cmake
+      - name: Build edge-proxy
+        run: |
+          cp scripts-internal/client/credential_files/edge_proxy_ci_cred_file.c mbed-edge/config/mbed_cloud_dev_credentials.c
+          cd mbed-edge
+          git submodule update --init
+          mkdir build
+          cd build
+          cmake -DDEVELOPER_MODE=ON -DFIRMWARE_UPDATE=OFF ..
+          make
+      - name: Run go tests against mbed-edge and clean up
+        run: |
+          mbed-edge/build/bin/edge-core &
+          sleep 3
+          scripts-internal/golang/go_test_script.sh --all
+          devid=$(curl --no-progress-meter localhost:8080/status | jq -r '."endpoint-name"')
+          echo Our edge-core Device ID is $devid
+          edgepid=$(ps -aux |grep bin/edge-core | awk '{print $2}' | head -n1)
+          echo PID for edge-core is $edgepid, killing it
+          kill $edgepid
+          echo Delete $devid via Izuma V3 REST API
+          scripts-internal/cloud/delete-device.sh $devid ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
+
   run-pysh-check:
     runs-on: ubuntu-22.04
     steps:
