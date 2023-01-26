@@ -39,8 +39,8 @@ jobs:
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
       - run: git clone git@github.com:PelionIoT/scripts-internal.git
       - run: ls -al
-      - name: Run go vet (findings may not increase)
-        run: scripts-internal/ci/more-lines-checker.sh ${{ github.event.repository.default_branch }} ${{ github.ref_name }} "scripts-internal/golang/go_vet_script.sh --all"
+      - name: Run go vet
+        run: scripts-internal/golang/go_vet_script.sh --all
 
   golint-check:
     runs-on: ubuntu-latest
