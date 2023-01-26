@@ -14,7 +14,3 @@
 # Backup files
 *.tmp
 *.$$$
-
-# Edge-proxy binary itself
-edge-proxy
-
