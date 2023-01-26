@@ -32,6 +32,7 @@ jobs:
         run: |
            sudo apt install pycodestyle pydocstyle black
            echo "." >scripts-internal/.nopyshcheck
+           echo "." >vendor/.nopyshcheck
            scripts-internal/pysh-check/pysh-check.sh --workdir .
 
   go-rpc-test:
