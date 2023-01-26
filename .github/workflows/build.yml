@@ -24,7 +24,7 @@ jobs:
       - name: Build all
         run: scripts-internal/golang/go_build_script.sh --all
 
-  go-vet:
+  go-vet-and-lint:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -37,28 +37,12 @@ jobs:
         run: | 
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - run: sudo apt install golint
       - run: git clone git@github.com:PelionIoT/scripts-internal.git
-      - run: ls -al
       - name: Run go vet
         run: scripts-internal/golang/go_vet_script.sh --all
-
-  golint-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - name: Set up golang
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.18'
-      - name: Set GitHub access token via git config
-        run: | 
-          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
-          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
-      - run: git clone git@github.com:PelionIoT/scripts-internal.git
-      - run: ls -al
-      - name: Run golint-checker (findings may not increase)
-        run: scripts-internal/ci/more-lines-checker.sh ${{ github.event.repository.default_branch }} ${{ github.ref_name }} "scripts-internal/golang/golint_script.sh --all"
+      - name: Run go lint
+        run: "scripts-internal/golang/golint_script.sh --all"
 
   go-rpc-test:
     runs-on: ubuntu-latest
