@@ -61,8 +61,8 @@ github.com/pkg/errors
 # github.com/sirupsen/logrus v1.7.0
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7 => golang.org/x/net v0.0.0-20210520170846-37e1c6afe023
-## explicit; go 1.17
+# golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
+## explicit; go 1.11
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
@@ -100,4 +100,3 @@ gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.3.0
 ## explicit
 gopkg.in/yaml.v2
-# golang.org/x/net => golang.org/x/net v0.0.0-20210520170846-37e1c6afe023

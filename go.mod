@@ -2,10 +2,7 @@ module github.com/PelionIoT/edge-proxy
 
 go 1.18
 
-replace (
-	github.com/gorilla/websocket v1.4.2 => github.com/pelioniot/websocket v1.4.2-1
-	golang.org/x/net => golang.org/x/net v0.0.0-20210520170846-37e1c6afe023 // Required to fix CVE-2021-33194
-)
+replace github.com/gorilla/websocket v1.4.2 => github.com/pelioniot/websocket v1.4.2-1
 
 require (
 	github.com/PelionIoT/remotedialer v1.0.4
