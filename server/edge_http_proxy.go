@@ -1,5 +1,7 @@
 /*
 Copyright (c) 2020, Arm Limited and affiliates.
+Copyright (c) 2023, Izuma Networks
+
 SPDX-License-Identifier: Apache-2.0
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +30,8 @@ import (
 	fog_http "github.com/PelionIoT/edge-proxy/http"
 )
 
-func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(* http.Request) (*url.URL, error)) {
+// RunEdgeHTTPProxyServer - run HTTP proxy server for Edge
+func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(*http.Request) (*url.URL, error)) {
 	handler := fog_http.EdgeHTTPProxy(forwardingAddress, caList, clientCert, proxyForEdge)
 	listener, err := net.Listen("tcp", listenAddr)
 
@@ -59,6 +62,7 @@ func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAd
 	fmt.Printf("HTTP edge proxy server shut down with error: %s\n", err.Error())
 }
 
+// RunEdgeTLSProxyServer - run TLS proxy server for Edge
 func RunEdgeTLSProxyServer(ctx context.Context, listenAddr string, cloudURL *url.URL, caList *x509.CertPool, clientCert *tls.Certificate) {
 	host := host(cloudURL)
 	listener, err := net.Listen("tcp", listenAddr)

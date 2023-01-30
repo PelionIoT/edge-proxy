@@ -86,6 +86,7 @@ func generateProtocolName() string {
 	return base64.URLEncoding.EncodeToString(rb)
 }
 
+// TpmCertificateBuilder builds a certificate chain using a TPM
 func TpmCertificateBuilder(settings CertStrategyConfig) (*tls.Certificate, <-chan *tls.Certificate, error) {
 	renewals := make(chan *tls.Certificate)
 

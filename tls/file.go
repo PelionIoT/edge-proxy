@@ -1,5 +1,7 @@
 /*
 Copyright (c) 2020, Arm Limited and affiliates.
+Copyright (c) 2023, Izuma Networks
+
 SPDX-License-Identifier: Apache-2.0
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,10 +22,16 @@ import (
 	"io/ioutil"
 )
 
+// FileCertDriverName const for "file"
 const FileCertDriverName = "file"
+
+// FileCertDriverCertKey const for "cert"
 const FileCertDriverCertKey = "cert"
+
+// FileCertDriverKeyKey const for "key"
 const FileCertDriverKeyKey = "key"
 
+// FileCertificateBuilder reads certificates to a certificate chain
 func FileCertificateBuilder(settings CertStrategyConfig) (*tls.Certificate, <-chan *tls.Certificate, error) {
 	certFile, keyFile, err := fileCertificateSettings(settings)
 

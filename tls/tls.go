@@ -1,5 +1,7 @@
 /*
 Copyright (c) 2020, Arm Limited and affiliates.
+Copyright (c) 2023, Izuma Networks
+
 SPDX-License-Identifier: Apache-2.0
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +21,10 @@ import (
 	"fmt"
 )
 
+// CertStrategyConfig map / string/string key-value pair storage
 type CertStrategyConfig map[string]string
+
+// CertificateBuilder function prototype
 type CertificateBuilder func(settings CertStrategyConfig) (*tls.Certificate, <-chan *tls.Certificate, error)
 
 var drivers map[string]CertificateBuilder = map[string]CertificateBuilder{
@@ -27,6 +32,7 @@ var drivers map[string]CertificateBuilder = map[string]CertificateBuilder{
 	TpmCertDriverName:  TpmCertificateBuilder,
 }
 
+// MakeCertificate creates certificates with given certificate strategy
 func MakeCertificate(driver string, settings CertStrategyConfig) (*tls.Certificate, <-chan *tls.Certificate, error) {
 	builder, ok := drivers[driver]
 
@@ -37,16 +43,18 @@ func MakeCertificate(driver string, settings CertStrategyConfig) (*tls.Certifica
 	return builder(settings)
 }
 
+// Drivers for certificate builder
 func Drivers() []string {
 	driverNames := make([]string, 0, len(drivers))
 
-	for name, _ := range drivers {
+	for name := range drivers {
 		driverNames = append(driverNames, name)
 	}
 
 	return driverNames
 }
 
+// DefaultDriver returns default cert driver (FileCertDriverName)
 func DefaultDriver() string {
 	return FileCertDriverName
 }

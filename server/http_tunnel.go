@@ -1,3 +1,19 @@
+/*
+Copyright (c) 2020, Arm Limited and affiliates.
+Copyright (c) 2023, Izuma Networks
+
+SPDX-License-Identifier: Apache-2.0
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package server
 
 import (
@@ -16,12 +32,13 @@ import (
 
 /*
  * The purpose of this feature is  to allow tunneling of arbitrary HTTP(S) connections.
- * One use case for this is to allow tunneling of all Pelion edge traffic over an authenticated
+ * One use case for this is to allow tunneling of all Izuma edge traffic over an authenticated
  * proxy, so that we can function behind restrictive firewalls that only allow HTTP(S)
  * traffic to pass through them.  As opposed to adding tuneling code to each service, it
  * would be easier to have edge-proxy handle tunneling configuration in one place.
  */
 
+// HTTPTunnelConfig for keeping track of HTTP connection details
 type HTTPTunnelConfig struct {
 	Addr          string
 	ExternalProxy string
@@ -38,6 +55,7 @@ func StartHTTPTunnel(config *HTTPTunnelConfig) error {
 	})
 }
 
+// HTTPSTunnelConfig keeps track of HTTPS tunnel configurations (certs, username/passwd, ...)
 type HTTPSTunnelConfig struct {
 	Addr          string
 	ExternalProxy string
@@ -48,6 +66,7 @@ type HTTPSTunnelConfig struct {
 	Password      string
 }
 
+// StartHTTPSTunnel - start HTTPS Tunnel for Edge
 func StartHTTPSTunnel(config *HTTPSTunnelConfig) error {
 	proxy := goproxy.NewProxyHttpServer()
 
@@ -77,7 +96,7 @@ func StartHTTPSTunnel(config *HTTPSTunnelConfig) error {
 			ok := rootCAPool.AppendCertsFromPEM(certs)
 			if !ok {
 				log.Printf("HTTP(S) Tunnel: failed to parse root CA file: %s\n", config.RootCAFile)
-				return errors.New("Failed to parse root CA certificate file.")
+				return errors.New("failed to parse root CA certificate file")
 			}
 
 			proxy.Tr.TLSClientConfig.RootCAs = rootCAPool

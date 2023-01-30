@@ -1,5 +1,7 @@
 /*
 Copyright (c) 2020, Arm Limited and affiliates.
+Copyright (c) 2023, Izuma Networks
+
 SPDX-License-Identifier: Apache-2.0
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,6 +24,7 @@ import (
 	"net/url"
 )
 
+// EdgeHTTPProxy starts serving the proxy requests via proxyForEdge (http.request).
 func EdgeHTTPProxy(forwardingAddress func(string) string, caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(*http.Request) (*url.URL, error)) http.Handler {
 	proxy := SmartHTTPProxy(forwardingAddress, caList, clientCert, proxyForEdge)
 

@@ -1,5 +1,7 @@
 /*
 Copyright (c) 2020, Arm Limited and affiliates.
+Copyright (c) 2023, Izuma Networks
+
 SPDX-License-Identifier: Apache-2.0
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -54,6 +56,7 @@ func splitAddr(host string) (string, string, int, error) {
 	return hostParts[0], hostParts[1], port, nil
 }
 
+// EdgeTransport - transport layer for the edge-proxy
 func EdgeTransport(caList *x509.CertPool, clientCert *tls.Certificate, proxyForEdge func(*http.Request) (*url.URL, error)) *http.Transport {
 	t := &http.Transport{
 		Proxy: proxyForEdge,
