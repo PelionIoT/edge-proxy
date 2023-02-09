@@ -26,6 +26,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -278,7 +279,7 @@ func (c *Client) dispatch(ctx context.Context, conn *websocket.Conn) {
 
 			msg, err := encodeClientRequest(req.id, req.method, req.args)
 			if err != nil {
-				fmt.Printf("Client.dispatch(): failed to encode the client request as a json rpc call. Error: %s\n", err.Error())
+				fmt.Printf("Client.dispatch(): failed to encode the client request id %s, method %s as a json rpc call. Error: %s\n", req.id, req.method, err.Error())
 
 				req.err <- err
 				continue
@@ -291,11 +292,26 @@ func (c *Client) dispatch(ctx context.Context, conn *websocket.Conn) {
 				req.err <- err
 				return
 			}
-
-			fmt.Printf("Client.dispatch(): successfully send the call request through the websocket connection. Request:{id: %s, method: %s, params: %v}\n", req.id, req.method, req.args)
+			// Get 1st value from the interface, which is they key name
+			valStr := fmt.Sprintf("%v", req.args)
+			firstWordStr, remainStr, found := strings.Cut(valStr, " ")
+			if strings.Contains(valStr, "Private") && found {
+				// In case of private keys, print only the key name - nothing else
+				fmt.Printf("Client.dispatch(): successfully send the call request through the websocket connection. Request:{id: %s, method: %s, params: %s}\n",
+					req.id,
+					req.method,
+					firstWordStr)
+			} else {
+				// Not a private key, we can print whole thing
+				fmt.Printf("Client.dispatch(): successfully send the call request through the websocket connection. Request:{id: %s, method: %s, params: %s %s}\n",
+					req.id,
+					req.method,
+					firstWordStr,
+					remainStr)
+			}
 		case reqSent := <-c.requestDone:
 			if c.deliveryMap == nil {
-				fmt.Printf("Client.dispatch(): found empty delivery map. Client should be reinialized...\n")
+				fmt.Printf("Client.dispatch(): found empty delivery map. Client should be reinitialized...\n")
 
 				continue
 			}
