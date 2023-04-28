@@ -294,20 +294,20 @@ func (c *Client) dispatch(ctx context.Context, conn *websocket.Conn) {
 			}
 			// Get 1st value from the interface, which is they key name
 			valStr := fmt.Sprintf("%v", req.args)
-			firstWordStr, remainStr, found := strings.Cut(valStr, " ")
-			if strings.Contains(valStr, "Private") && found {
+
+			if strings.Contains(valStr, "Private") {
 				// In case of private keys, print only the key name - nothing else
+				keyNameStr := strings.Split(valStr, " ")[0]
 				fmt.Printf("Client.dispatch(): successfully send the call request through the websocket connection. Request:{id: %s, method: %s, params: %s}\n",
 					req.id,
 					req.method,
-					firstWordStr)
+					keyNameStr)
 			} else {
 				// Not a private key, we can print whole thing
-				fmt.Printf("Client.dispatch(): successfully send the call request through the websocket connection. Request:{id: %s, method: %s, params: %s %s}\n",
+				fmt.Printf("Client.dispatch(): successfully send the call request through the websocket connection. Request:{id: %s, method: %s, params: %s}\n",
 					req.id,
 					req.method,
-					firstWordStr,
-					remainStr)
+					valStr)
 			}
 		case reqSent := <-c.requestDone:
 			if c.deliveryMap == nil {
