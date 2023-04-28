@@ -10,7 +10,7 @@ jobs:
   go-build-and-checks:
     strategy:
       matrix:
-        golang-ver: [1.15, 1.16, 1.17, 1.18, 1.19]
+        golang-ver: [1.17, 1.18, 1.19]
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
