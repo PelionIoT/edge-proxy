@@ -23,6 +23,7 @@ jobs:
         run: | 
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - run: go version
       - run: sudo apt install golint
       - run: git clone git@github.com:PelionIoT/scripts-internal.git
       - name: Build all
@@ -53,6 +54,7 @@ jobs:
         run: | 
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - run: go version
       - name: Clone scripts-internal and mbed-edge repos
         run: |
           git clone git@github.com:PelionIoT/scripts-internal.git
