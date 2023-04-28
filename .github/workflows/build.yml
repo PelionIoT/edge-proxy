@@ -8,6 +8,9 @@ concurrency:
 
 jobs:
   go-build-and-checks:
+    strategy:
+      matrix:
+        golang-ver: ["1.17", "1.18", "1.19", "1.20"]
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -15,15 +18,16 @@ jobs:
       - name: Set up golang
         uses: actions/setup-go@v3
         with:
-          go-version: '1.18'
+          go-version: ${{ matrix.golang-ver }}
       - name: Set GitHub access token via git config
         run: | 
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - run: go version
       - run: sudo apt install golint
       - run: git clone git@github.com:PelionIoT/scripts-internal.git
       - name: Build all
-        run: scripts-internal/golang/go_build_script.sh --all
+        run: scripts-internal/golang/go_build_script.sh
       - name: Run go vet
         run: scripts-internal/golang/go_vet_script.sh --all
       - name: Run go lint
@@ -50,6 +54,7 @@ jobs:
         run: | 
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - run: go version
       - name: Clone scripts-internal and mbed-edge repos
         run: |
           git clone git@github.com:PelionIoT/scripts-internal.git
