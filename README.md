@@ -1,6 +1,8 @@
 # edge-proxy
 * Proxy service on the edge providing HTTP routing service for gateway-based services and reserve tunnel service for cloud-based services.
 
+Requires in minimum `golang` version 1.17 to build (due to `net` version 0.7.0 update).
+
 # Use Cases
 1) A cloud-based service needs to make a request to gateway-based service
 2) A gateway-based service needs to make a request to a cloud-based service
