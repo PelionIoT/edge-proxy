@@ -46,6 +46,10 @@ jobs:
            scripts-internal/pysh-check/pysh-check.sh --workdir .
 
   go-rpc-test:
+    strategy:
+      matrix:
+        # Can't run tests with 1.17 due to any requirement from ginkgo.
+        golang-ver: ["1.18", "1.19", "1.20"]
     runs-on: ubuntu-latest
     env: 
       CLOUD_API_KEY : ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
@@ -55,7 +59,7 @@ jobs:
       - name: Set up golang
         uses: actions/setup-go@v3
         with:
-          go-version: '1.18'
+          go-version: ${{ matrix.golang-ver }}
       - name: Set GitHub access token via git config
         run: | 
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
