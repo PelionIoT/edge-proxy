@@ -1,5 +1,9 @@
 name: Build
-on: push
+on: 
+  push:
+    # Don't run if only the .md -file is changed
+    paths-ignore:
+      - '**/*.md'
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
