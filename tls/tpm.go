@@ -78,7 +78,7 @@ type certificate struct {
 	Name string `json:"certificate_name"`
 }
 
-// generateProtocolName generate the name for each JSON-RPC client registered as a protocal translator
+// generateProtocolName generate the name for each JSON-RPC client registered as a protocol translator
 func generateProtocolName() string {
 	rb := make([]byte, 10)
 	rand.Read(rb)
@@ -168,7 +168,7 @@ func configureTLSCert(client *rpc.Client, settings CertStrategyConfig) (tls.Cert
 		return fail(errInvalidECPublicKey)
 	}
 
-	// pass the implementaion of ecdsaPrivateKey as an opaque private key of the cert
+	// pass the implementation of ecdsaPrivateKey as an opaque private key of the cert
 	tlsCert.PrivateKey = &ecdsaPrivateKey{
 		certName:       settings[TpmDeviceCertName],
 		privateKeyName: settings[TpmPrivateKeyName],

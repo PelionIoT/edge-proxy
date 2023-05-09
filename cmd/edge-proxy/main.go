@@ -279,7 +279,7 @@ func startEdgeProxyReverseTunnel(ca string, proxyURI string, forwardingAddresses
 				fmt.Printf("Edge HTTP proxy server exited\n")
 			}
 
-			fmt.Printf("edge-proxy proxy server shut down. Attemtping to re-launch proxy server in %d seconds...\n", ServerBackoffSeconds)
+			fmt.Printf("edge-proxy proxy server shut down. Attempting to re-launch proxy server in %d seconds...\n", ServerBackoffSeconds)
 			<-time.After(time.Second * ServerBackoffSeconds)
 		}
 	}(certificate)

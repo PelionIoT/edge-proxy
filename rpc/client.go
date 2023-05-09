@@ -111,7 +111,7 @@ func (c *Client) IsEmpty() bool {
 }
 
 // Call initializes a background context and performs a JSON-RPC call with the given
-// arguments and unmarshals into result if no error occured
+// arguments and unmarshals into result if no error occurred
 //
 // The result must be a pointer so that package json can unmarshal into it. Nil object
 // should not be passed into
@@ -129,7 +129,7 @@ func generateCallID(length int) string {
 }
 
 // CallWithContext performs a JSON-RPC call with the given arguments and unmarshals into
-// result if no error occured
+// result if no error occurred
 func (c *Client) CallWithContext(ctx context.Context, method string, args interface{}, result interface{}) error {
 	id := generateCallID(32)
 
