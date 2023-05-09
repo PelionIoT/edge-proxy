@@ -24,7 +24,9 @@ jobs:
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
       - run: go version
-      - run: sudo apt install golint
+      - run: | 
+          sudo apt-get update && \
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y golint
       - run: git clone git@github.com:PelionIoT/scripts-internal.git
       - name: Build all
         run: scripts-internal/golang/go_build_script.sh
