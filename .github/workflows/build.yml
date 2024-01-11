@@ -83,15 +83,26 @@ jobs:
           cd build
           cmake -DDEVELOPER_MODE=ON -DFIRMWARE_UPDATE=OFF ..
           make
-      - name: Run go tests against mbed-edge and clean up
+      - name: Run go tests against mbed-edge
         run: |
           mbed-edge/build/bin/edge-core &
           sleep 3
           scripts-internal/golang/go_test_script.sh --all
+      - name: Cleanup - kill edge-core and delete device
+        if: always()
+        run: |
           devid=$(curl --no-progress-meter localhost:8080/status | jq -r '."endpoint-name"')
-          echo Our edge-core Device ID is $devid
           edgepid=$(ps -aux |grep bin/edge-core | awk '{print $2}' | head -n1)
-          echo PID for edge-core is $edgepid, killing it
-          kill $edgepid
-          echo Delete $devid via Izuma V3 REST API
-          scripts-internal/cloud/delete-device.sh $devid ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
+          if [[ -n "$edgepid" ]]; then
+            # Kill edge-core if pid is not empty
+            echo "Kill edge-core with pid: $edgepid"
+            kill $edgepid
+          else
+            echo "edge-core pid is empty"
+          fi
+          if [[ -n "$devid" ]]; then
+            echo "Delete $devid via Izuma V3 REST API"
+            scripts-internal/cloud/delete-device.sh $devid ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
+          else
+            echo "edge-core device ID is empty."
+          fi
