@@ -14,17 +14,17 @@ jobs:
   go-build-and-checks:
     strategy:
       matrix:
-        golang-ver: ["1.17", "1.18", "1.19", "1.20"]
+        golang-ver: ["1.19", "1.20", "1.21", "1.22"]
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up golang
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang-ver }}
       - name: Set GitHub access token via git config
-        run: | 
+        run: |
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
       - run: go version
@@ -49,15 +49,15 @@ jobs:
     strategy:
       matrix:
         # Can't run tests with 1.17 due to any requirement from ginkgo.
-        golang-ver: ["1.18", "1.19", "1.20"]
+        golang-ver: ["1.19", "1.20", "1.21", "1.22"]
     runs-on: ubuntu-latest
     env: 
       CLOUD_API_KEY : ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up golang
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang-ver }}
       - name: Set GitHub access token via git config
