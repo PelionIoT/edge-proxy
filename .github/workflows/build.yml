@@ -23,15 +23,16 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang-ver }}
-      - name: Set GitHub access token via git config
-        run: |
-          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
-          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+      - name: Check out scripts-internal repo
+        uses: actions/checkout@v4
+        with:
+          repository: PelionIoT/scripts-internal
+          path: scripts-internal
+          token: ${{ secrets.ACCESS_TOKEN }}
       - run: go version
       - run: | 
           sudo apt-get update && \
           DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y golint
-      - run: git clone git@github.com:PelionIoT/scripts-internal.git
       - name: Build all
         run: scripts-internal/golang/go_build_script.sh
       - name: Run go vet
@@ -60,15 +61,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang-ver }}
-      - name: Set GitHub access token via git config
-        run: | 
-          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
-          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
-      - run: go version
-      - name: Clone scripts-internal and mbed-edge repos
-        run: |
-          git clone git@github.com:PelionIoT/scripts-internal.git
-          git clone git@github.com:PelionIoT/mbed-edge.git
+      - name: Check out scripts-internal repo
+        uses: actions/checkout@v4
+        with:
+          repository: PelionIoT/scripts-internal
+          path: scripts-internal
+          token: ${{ secrets.ACCESS_TOKEN }}      - run: go version
+      - name: Check out mbed-edge repo
+        uses: actions/checkout@v4
+        with:
+          repository: PelionIoT/mbed-edge
+          path: mbed-edge
+          token: ${{ secrets.ACCESS_TOKEN }}
       - name: Get pre-requisites
         run: |
           sudo apt-get update && \
