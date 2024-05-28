@@ -66,7 +66,8 @@ jobs:
         with:
           repository: PelionIoT/scripts-internal
           path: scripts-internal
-          token: ${{ secrets.ACCESS_TOKEN }}      - run: go version
+          token: ${{ secrets.ACCESS_TOKEN }}
+      - run: go version
       - name: Check out mbed-edge repo
         uses: actions/checkout@v4
         with:
@@ -90,7 +91,17 @@ jobs:
       - name: Run go tests against mbed-edge
         run: |
           mbed-edge/build/bin/edge-core &
-          sleep 3
+          sleep 15
+          for i in {1..10}; do
+            status=$(curl --silent localhost:8080/status | jq -r '.status')
+            if [[ "$status" == "connected" ]]; then
+              echo "Status is connected"
+              break
+            else
+              echo "Status is $status, retrying in 5 seconds"
+              sleep 5
+            fi
+          done
           scripts-internal/golang/go_test_script.sh --all
       - name: Cleanup - kill edge-core and delete device
         if: always()
