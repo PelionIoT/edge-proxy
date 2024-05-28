@@ -2,7 +2,7 @@ module github.com/PelionIoT/edge-proxy
 
 go 1.20
 
-replace github.com/gorilla/websocket v1.5.1 => github.com/pelioniot/websocket v1.5.1-2
+replace github.com/gorilla/websocket v1.5.1 => github.com/pelioniot/websocket v1.5.1-3
 
 require (
 	github.com/PelionIoT/remotedialer v1.0.4

@@ -35,7 +35,7 @@ func init() {
 	proxy.RegisterDialerType("http", func(proxyURL *url.URL, forwardDialer proxy.Dialer) (proxy.Dialer, error) {
 		return &httpProxyDialer{proxyURL: proxyURL, forwardDial: forwardDialer.Dial}, nil
 	})
-	proxy.RegisterDialerType("https", func(proxyURL *url.URL, forwardDialer proxy_Dialer) (proxy_Dialer, error) {
+	proxy.RegisterDialerType("https", func(proxyURL *url.URL, forwardDialer proxy.Dialer) (proxy.Dialer, error) {
 		dialer := &tlsDialer{}
 		return &httpProxyDialer{proxyURL: proxyURL, forwardDial: dialer.Dial}, nil
 	})
