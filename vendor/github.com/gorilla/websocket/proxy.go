@@ -9,10 +9,13 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"golang.org/x/net/proxy"
 )
 
 type netDialerFunc func(network, addr string) (net.Conn, error)
@@ -29,10 +32,10 @@ func (t *tlsDialer) Dial(network, addr string) (c net.Conn, err error) {
 }
 
 func init() {
-	proxy_RegisterDialerType("http", func(proxyURL *url.URL, forwardDialer proxy_Dialer) (proxy_Dialer, error) {
+	proxy.RegisterDialerType("http", func(proxyURL *url.URL, forwardDialer proxy.Dialer) (proxy.Dialer, error) {
 		return &httpProxyDialer{proxyURL: proxyURL, forwardDial: forwardDialer.Dial}, nil
 	})
-	proxy_RegisterDialerType("https", func(proxyURL *url.URL, forwardDialer proxy_Dialer) (proxy_Dialer, error) {
+	proxy.RegisterDialerType("https", func(proxyURL *url.URL, forwardDialer proxy.Dialer) (proxy.Dialer, error) {
 		dialer := &tlsDialer{}
 		return &httpProxyDialer{proxyURL: proxyURL, forwardDial: dialer.Dial}, nil
 	})
@@ -60,14 +63,16 @@ func (hpd *httpProxyDialer) Dial(network string, addr string) (net.Conn, error) 
 	}
 
 	connectReq := &http.Request{
-		Method: "CONNECT",
+		Method: http.MethodConnect,
 		URL:    &url.URL{Opaque: addr},
 		Host:   addr,
 		Header: connectHeader,
 	}
 
 	if err := connectReq.Write(conn); err != nil {
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			log.Printf("httpProxyDialer: failed to close connection: %v", err)
+		}
 		return nil, err
 	}
 
@@ -76,12 +81,16 @@ func (hpd *httpProxyDialer) Dial(network string, addr string) (net.Conn, error) 
 	br := bufio.NewReader(conn)
 	resp, err := http.ReadResponse(br, connectReq)
 	if err != nil {
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			log.Printf("httpProxyDialer: failed to close connection: %v", err)
+		}
 		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			log.Printf("httpProxyDialer: failed to close connection: %v", err)
+		}
 		f := strings.SplitN(resp.Status, " ", 2)
 		return nil, errors.New(f[1])
 	}
