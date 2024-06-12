@@ -1,0 +1,88 @@
+name: RPC test
+on: 
+  push:
+    # Don't run if only the .md -file is changed
+    paths-ignore:
+      - '**/*.md'
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: edge-rpc-test-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  go-rpc-test:
+    strategy:
+      matrix:
+        # Can't run tests with 1.17 due to any requirement from ginkgo.
+        golang-ver: ["1.19", "1.20", "1.21", "1.22"]
+    runs-on: ubuntu-latest
+    env: 
+      CLOUD_API_KEY : ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.golang-ver }}
+      - name: Check out scripts-internal repo
+        uses: actions/checkout@v4
+        with:
+          repository: PelionIoT/scripts-internal
+          path: scripts-internal
+          token: ${{ secrets.ACCESS_TOKEN }}
+      - run: go version
+      - name: Check out mbed-edge repo
+        uses: actions/checkout@v4
+        with:
+          repository: PelionIoT/mbed-edge
+          path: mbed-edge
+          token: ${{ secrets.ACCESS_TOKEN }}
+      - name: Get pre-requisites
+        run: |
+          sudo apt-get update && \
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install tzdata git curl \
+          build-essential libc6-dev cmake
+      - name: Build edge-proxy
+        run: |
+          cp scripts-internal/client/credential_files/edge_proxy_ci_cred_file.c mbed-edge/config/mbed_cloud_dev_credentials.c
+          cd mbed-edge
+          git submodule update --init
+          mkdir build
+          cd build
+          cmake -DDEVELOPER_MODE=ON -DFIRMWARE_UPDATE=OFF ..
+          make
+      - name: Run go tests against mbed-edge
+        run: |
+          mbed-edge/build/bin/edge-core &
+          sleep 15
+          for i in {1..10}; do
+            status=$(curl --silent localhost:8080/status | jq -r '.status')
+            if [[ "$status" == "connected" ]]; then
+              echo "Status is connected"
+              break
+            else
+              echo "Status is $status, retrying in 5 seconds"
+              sleep 5
+            fi
+          done
+          scripts-internal/golang/go_test_script.sh --all
+      - name: Cleanup - kill edge-core and delete device
+        if: always()
+        run: |
+          devid=$(curl --no-progress-meter localhost:8080/status | jq -r '."endpoint-name"')
+          edgepid=$(ps -aux |grep bin/edge-core | awk '{print $2}' | head -n1)
+          if [[ -n "$edgepid" ]]; then
+            # Kill edge-core if pid is not empty
+            echo "Kill edge-core with pid: $edgepid"
+            kill $edgepid
+          else
+            echo "edge-core pid is empty"
+          fi
+          if [[ -n "$devid" ]]; then
+            echo "Delete $devid via Izuma V3 REST API"
+            scripts-internal/cloud/delete-device.sh $devid ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
+          else
+            echo "edge-core device ID is empty."
+          fi
