@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   schedule:
     # Once week 02:20 on Saturday
-    - cron: '20 2 * * Sat'
+    - cron: '20 2 * * Sun'
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
