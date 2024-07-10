@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/:license-apache-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/PelionIoT/edge-proxy)](https://goreportcard.com/report/github.com/PelionIoT/edge-proxy)
+[![Build and static tests](https://github.com/PelionIoT/edge-proxy/actions/workflows/build.yml/badge.svg)](https://github.com/PelionIoT/edge-proxy/actions/workflows/build.yml)
 
 * Proxy service on the edge providing HTTP routing service for gateway-based services and reserve tunnel service for cloud-based services.
 
