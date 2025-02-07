@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         # Can't run tests with 1.17 due to any requirement from ginkgo.
-        golang-ver: ["1.19", "1.20", "1.21", "1.22"]
+        golang-ver: ["1.20", "1.21", "1.22", "1.23"]
     runs-on: ubuntu-latest
     env: 
       CLOUD_API_KEY : ${{ secrets.EDGE_PROXY_CI_CLOUD_ACCESS__KEY }}
