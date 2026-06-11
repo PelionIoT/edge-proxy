@@ -80,6 +80,9 @@ func RunEdgeTLSProxyServer(ctx context.Context, listenAddr string, cloudURL *url
 		GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 			return clientCert, nil
 		},
+		// Advertise HTTP/2 (h2) in TLS ALPN so NGINX negotiates HTTP/2 for gRPC.
+		// Without this, NGINX falls back to HTTP/1.1 and gRPC frames can't be parsed.
+		NextProtos: []string{"h2"},
 	}
 
 	var i uint64
