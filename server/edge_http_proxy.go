@@ -63,8 +63,16 @@ func RunEdgeHTTPProxyServer(ctx context.Context, listenAddr string, forwardingAd
 }
 
 // RunEdgeTLSProxyServer - run TLS proxy server for Edge
-func RunEdgeTLSProxyServer(ctx context.Context, listenAddr string, cloudURL *url.URL, caList *x509.CertPool, clientCert *tls.Certificate) {
+func RunEdgeTLSProxyServer(ctx context.Context, listenAddr string, cloudURL *url.URL, caList *x509.CertPool, clientCert *tls.Certificate, serverName string) {
 	host := host(cloudURL)
+
+	// When the cloud is reached through an address that doesn't match its certificate
+	// (a port-forward or NodePort on 127.0.0.1, for example), serverName overrides the
+	// SNI and verification hostname. Otherwise tls.Dial derives both from host, and the
+	// handshake fails against a certificate issued for the real hostname.
+	if serverName == "" {
+		serverName = cloudURL.Hostname()
+	}
 	listener, err := net.Listen("tcp", listenAddr)
 
 	if err != nil {
@@ -76,10 +84,14 @@ func RunEdgeTLSProxyServer(ctx context.Context, listenAddr string, cloudURL *url
 	defer listener.Close()
 
 	tlsConfig := &tls.Config{
-		RootCAs: caList,
+		RootCAs:    caList,
+		ServerName: serverName,
 		GetClientCertificate: func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 			return clientCert, nil
 		},
+		// Advertise HTTP/2 (h2) in TLS ALPN so NGINX negotiates HTTP/2 for gRPC.
+		// Without this, NGINX falls back to HTTP/1.1 and gRPC frames can't be parsed.
+		NextProtos: []string{"h2"},
 	}
 
 	var i uint64

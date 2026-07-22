@@ -53,6 +53,8 @@ var externalHTTPProxyCACert string
 var ca string
 var certStrategy string
 var useL4Proxy bool
+var serverName string
+var disableReverseTunnel bool
 var certStrategyOptions cmd.OptionMap = cmd.OptionMap{}
 var forwardingAddressesMap string
 var httpTunnelAddr string
@@ -65,12 +67,14 @@ var httpsTunnelPassword string
 
 func main() {
 	flag.StringVar(&tunnelURI, "tunnel-uri", "ws://localhost:8181/connect", "Endpoint to connect to for reverse tunneling")
+	flag.BoolVar(&disableReverseTunnel, "disable-reverse-tunnel", false, "Don't establish the reverse tunnel, and serve the outbound proxy only. The tunnel is a websocket (HTTP/1.1), so it can't be used against a cloud endpoint that only accepts HTTP/2")
 	flag.StringVar(&proxyURI, "proxy-uri", "", "Default server to which outgoing HTTP requests should be forwarded.  See forwarding-addresses option for overrides")
 	flag.StringVar(&proxyAddr, "proxy-listen", "0.0.0.0:8080", "Listen address for HTTP proxy server")
 	flag.StringVar(&externalHTTPProxyURI, "extern-http-proxy-uri", "", "optional external Http proxy for site. For an authenticated proxy, specify the username and password in the URI, as in https://user:pwd@proxy-server:proxy-port")
 	flag.StringVar(&externalHTTPProxyCACert, "extern-http-proxy-cacert", "", "If the external HTTP proxy uses TLS, verify the server certificate against this CA cert, instead of the system root CAs.")
 	flag.BoolVar(&useL4Proxy, "use-l4-proxy", false, "Use a layer 4 proxy instead of a layer 7 proxy")
 	flag.StringVar(&ca, "ca", "", "Certificate authority for the cloud")
+	flag.StringVar(&serverName, "server-name", "", "Server name (SNI) to use when connecting to the cloud, if it differs from the host in proxy-uri. Only applies with use-l4-proxy")
 	flag.StringVar(&certStrategy, "cert-strategy", fog_tls.DefaultDriver(), fmt.Sprintf("Certificate strategy must be one of: %v", fog_tls.Drivers()))
 	flag.Var(&certStrategyOptions, "cert-strategy-options", "Can be specified one or more times. Must be a key-value pair (<key>=<value>)")
 	flag.StringVar(&forwardingAddressesMap, "forwarding-addresses", "{}", "Map of local address to forwarded address for outgoing HTTP requests. For each forwarding request received at proxy-listen, the destination URI in the request is rewritten based on this map, where the destination server is replaced with the value of the corresponding key.  If the destination server isn't found in this map, then the value of proxy-uri is used.  Must be a json string")
@@ -88,7 +92,7 @@ func main() {
 		proxyOnlyMode = true
 	}
 
-	if tunnelURI == "" {
+	if tunnelURI == "" && !disableReverseTunnel {
 		fmt.Printf("tunnel-uri must be provided\n")
 		os.Exit(1)
 	}
@@ -227,7 +231,16 @@ func startEdgeProxyReverseTunnel(ca string, proxyURI string, forwardingAddresses
 		return err
 	}
 
+	// The reverse tunnel is a websocket, so it speaks HTTP/1.1 over the same proxy
+	// connection the gRPC traffic uses. A cloud endpoint that only accepts HTTP/2
+	// (Envoy with an HTTP2-only listener, for example) closes it immediately, so
+	// allow deployments that only need the outbound proxy to leave it off.
 	go func() {
+		if disableReverseTunnel {
+			fmt.Printf("Reverse tunnel disabled. Running the proxy server only\n")
+			return
+		}
+
 		for {
 			fmt.Printf("Establishing edge-proxy reverse tunnel (tunnelURI=%s)\n", tunnelURI)
 
@@ -259,7 +272,7 @@ func startEdgeProxyReverseTunnel(ca string, proxyURI string, forwardingAddresses
 
 			if useL4Proxy {
 				fmt.Printf("Starting edge TLS proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
-				server.RunEdgeTLSProxyServer(childCtx, proxyAddr, proxyURIParsed, caList, cert)
+				server.RunEdgeTLSProxyServer(childCtx, proxyAddr, proxyURIParsed, caList, cert, serverName)
 				fmt.Printf("Edge TLS proxy server exited\n")
 			} else {
 				fmt.Printf("Starting edge HTTP proxy (proxyAddr=%s, proxyURI=%s)\n", proxyAddr, proxyURI)
